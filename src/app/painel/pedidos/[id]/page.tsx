@@ -1,0 +1,67 @@
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth/require-auth";
+import { prisma } from "@/lib/db";
+import { formatBRL } from "@/lib/utils";
+import { PAYMENT_STATUS_LABELS, PHYSICAL_ORDER_LABELS, formatDate } from "@/lib/labels";
+
+export const metadata = { title: "Pedido" };
+
+export default async function PedidoPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
+  const { id } = await params;
+
+  const order = await prisma.order.findFirst({
+    where: { id, customerId: user.id },
+    include: { items: { include: { plan: true } }, payments: true, physicalOrder: true },
+  });
+  if (!order) notFound();
+
+  const payment = order.payments[0];
+  const physical = order.physicalOrder;
+
+  return (
+    <div>
+      <h1 className="font-serif text-3xl">Pedido {order.orderNumber}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Criado em {formatDate(order.createdAt)}</p>
+
+      <div className="mt-6 rounded-3xl border border-border bg-white p-6">
+        <h2 className="font-serif text-xl">Itens</h2>
+        <ul className="mt-4 divide-y divide-border">
+          {order.items.map((item) => (
+            <li key={item.id} className="flex items-center justify-between py-3">
+              <div>
+                <p className="font-medium">{item.description}</p>
+                <p className="text-sm text-muted-foreground">Qtd. {item.quantity}</p>
+              </div>
+              <p>{formatBRL(item.totalCents)}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+          <p className="font-medium">Total</p>
+          <p className="font-serif text-2xl">{formatBRL(order.total)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-3xl border border-border bg-white p-6">
+          <p className="text-sm text-muted-foreground">Pagamento</p>
+          <p className="mt-1 font-medium">
+            {payment ? PAYMENT_STATUS_LABELS[payment.status] ?? payment.status : "—"}
+          </p>
+        </div>
+        {physical && (
+          <div className="rounded-3xl border border-border bg-white p-6">
+            <p className="text-sm text-muted-foreground">Produção física</p>
+            <p className="mt-1 font-medium">
+              {PHYSICAL_ORDER_LABELS[physical.status] ?? physical.status}
+            </p>
+            {physical.trackingCode && (
+              <p className="mt-2 text-sm text-muted-foreground">Rastreio: {physical.trackingCode}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

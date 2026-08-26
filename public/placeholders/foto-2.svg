@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-label="Sua foto aqui">
+  <rect width="600" height="800" fill="#FFF9F5"/>
+  <rect x="40" y="40" width="520" height="720" fill="none" stroke="#EADDE0" stroke-width="2" rx="24"/>
+  <path d="M300 300 m -60 0 a 60 60 0 1 1 120 0 a 60 60 0 1 1 -120 0" fill="none" stroke="#7A2438" stroke-width="2"/>
+  <path d="M270 330 L 300 360 L 340 310" fill="none" stroke="#C6A15B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="300" y="480" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#4B1625">Sua foto aqui</text>
+  <text x="300" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#6E6568">Placeholder de demonstração</text>
+</svg>

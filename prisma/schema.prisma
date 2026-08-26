@@ -1,0 +1,563 @@
+// Prisma schema — Plataforma de Presentes Digitais com NFC
+// Documento de referência: PROMPT_MESTRE_PLATAFORMA_PRESENTE_NFC.md (seções 15 e 21)
+//
+// Provider: PostgreSQL (Supabase em produção; PostgreSQL local via docker-compose em dev).
+// RLS: as políticas de Row-Level Security estão em `prisma/rls-policies.sql` e são aplicadas
+//      apenas no ambiente Supabase de produção. O PostgreSQL local de desenvolvimento não
+//      exige RLS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Usado pelo Prisma Migrate em ambientes com pooler (Supabase/pgBouncer).
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (estados de negócio — ver seção 21)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CUSTOMER
+  OPERATOR
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  AWAITING_PAYMENT
+  PROCESSING
+  PUBLISHED
+  EXPIRED
+  ARCHIVED
+  BLOCKED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REFUNDED
+  CHARGEDBACK
+}
+
+enum OrderStatus {
+  CREATED
+  AWAITING_PAYMENT
+  PAID
+  CANCELLED
+  REFUNDED
+  CHARGEDBACK
+}
+
+enum PhysicalOrderStatus {
+  WAITING_PAYMENT
+  QUEUED
+  PRINTING
+  ASSEMBLY
+  NFC_WRITING
+  QUALITY_CHECK
+  PACKED
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+enum NfcTagStatus {
+  GENERATED
+  WRITTEN
+  TESTED
+  PACKED
+  SHIPPED
+  ACTIVE
+  DISABLED
+}
+
+enum CouponType {
+  FIXED
+  PERCENTAGE
+}
+
+enum MediaStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum AbuseReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum TemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+  OTHER
+}
+
+enum VersionState {
+  DRAFT
+  PUBLISHED
+}
+
+enum OrderItemType {
+  PLAN
+  PHYSICAL
+  UPGRADE
+  SHIPPING
+}
+
+// ---------------------------------------------------------------------------
+// Identidade e acesso
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  emailNormalized String @unique @map("email_normalized")
+  name         String?
+  phone        String?
+  role         Role     @default(CUSTOMER)
+
+  // Consentimentos LGPD (datas em ISO). Ex.: { "terms": "...", "privacy": "...", "marketing": null }
+  consents     Json     @default("{}")
+  consentTermsAt    DateTime? @map("consent_terms_at")
+  consentPrivacyAt  DateTime? @map("consent_privacy_at")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  projects     Project[]
+  orders       Order[]
+  auditLogs    AuditLog[]
+  magicLinks   MagicLinkToken[]
+
+  @@map("users")
+}
+
+// Token de magic link. Uso de DESENVOLVIMENTO (provedor local).
+// Em produção a autenticação é delegada ao Supabase Auth.
+model MagicLinkToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("magic_link_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo e configuração comercial
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  status    CategoryStatus @default(ACTIVE)
+  order     Int            @default(0)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  templates Template[]
+
+  @@map("categories")
+}
+
+model Template {
+  id            String         @id @default(cuid())
+  categoryId    String         @map("category_id")
+  name          String
+  slug          String         @unique
+  description   String?
+  version       Int            @default(1)
+  status        TemplateStatus @default(ACTIVE)
+  thumbnailKey  String?        @map("thumbnail_key")
+  schemaVersion Int            @default(1) @map("schema_version")
+  // Limites e presets de cores validados (JSON com schema versionado).
+  presets       Json           @default("{}")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  projects   Project[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@map("templates")
+}
+
+model Plan {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  priceCents       Int      @map("price_cents")
+  durationDays     Int?     @map("duration_days") // nulo = "Para Sempre"
+  // Limites validados em JSON: { "maxPhotos": 30, "maxMoments": 12, ... }
+  limits           Json     @default("{}")
+  includesPhysical Boolean  @default(false) @map("includes_physical")
+  active           Boolean  @default(true)
+  order            Int      @default(0)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  projects     Project[]
+  orderItems   OrderItem[]
+  coupons      CouponPlan[]
+
+  @@map("plans")
+}
+
+// ---------------------------------------------------------------------------
+// Projetos (presentes)
+// ---------------------------------------------------------------------------
+
+model Project {
+  id              String        @id @default(uuid()) @db.Uuid
+  ownerId         String?       @map("owner_id") @db.Uuid
+  draftToken      String        @unique @map("draft_token")
+  templateId      String        @map("template_id")
+  templateVersion Int           @default(1) @map("template_version")
+  planId          String?       @map("plan_id")
+  slug            String?       @unique
+  publicToken     String?       @unique @map("public_token")
+  status          ProjectStatus @default(DRAFT)
+  // Conteúdo do presente, validado por schema versionado (Zod). Ver src/lib/domain/projects.ts
+  content         Json          @default("{}")
+  privacyConfig   Json          @default("{}") @map("privacy_config")
+  publishedAt     DateTime?     @map("published_at")
+  expiresAt       DateTime?     @map("expires_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  owner        User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  template     Template        @relation(fields: [templateId], references: [id])
+  plan         Plan?           @relation(fields: [planId], references: [id], onDelete: SetNull)
+  versions     ProjectVersion[]
+  mediaAssets  MediaAsset[]
+  orders       Order[]
+  nfcTags      NfcTag[]
+  abuseReports AbuseReport[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([draftToken])
+  @@index([publicToken])
+  @@map("projects")
+}
+
+model ProjectVersion {
+  id            String       @id @default(uuid()) @db.Uuid
+  projectId     String       @map("project_id") @db.Uuid
+  versionNumber Int          @map("version_number")
+  content       Json
+  author        String?      // id do usuário ou "system"
+  state         VersionState @default(DRAFT)
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, versionNumber])
+  @@index([projectId])
+  @@map("project_versions")
+}
+
+model MediaAsset {
+  id          String      @id @default(uuid()) @db.Uuid
+  projectId   String      @map("project_id") @db.Uuid
+  storageKey  String      @map("storage_key") // chave privada; nunca exposta publicamente
+  mimeType    String      @map("mime_type")
+  sizeBytes   Int         @map("size_bytes")
+  width       Int?
+  height      Int?
+  variants    Json        @default("{}") // { "thumbnail": {...}, "preview": {...}, "full": {...} }
+  hash        String?
+  position    Int         @default(0)
+  altText     String?     @map("alt_text")
+  status      MediaStatus @default(PENDING)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("media_assets")
+}
+
+// ---------------------------------------------------------------------------
+// Pedidos e pagamentos
+// ---------------------------------------------------------------------------
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  orderNumber String      @unique @map("order_number") // número humano; NÃO é segredo
+  customerId  String?     @map("customer_id") @db.Uuid
+  checkoutEmail String?   @map("checkout_email")
+  projectId   String?     @map("project_id") @db.Uuid
+  currency    String      @default("BRL")
+  subtotal    Int         @default(0)
+  discount    Int         @default(0)
+  shipping    Int         @default(0)
+  total       Int         @default(0)
+  status      OrderStatus @default(CREATED)
+  addressSnapshot Json?   @map("address_snapshot")
+  partnerCode String?     @map("partner_code")
+  utm         Json?       @map("utm")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  customer       User?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  project        Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  items          OrderItem[]
+  payments       Payment[]
+  physicalOrder  PhysicalOrder?
+  couponRedemptions CouponRedemption[]
+
+  @@index([customerId])
+  @@index([projectId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String        @id @default(cuid())
+  orderId     String        @map("order_id") @db.Uuid
+  type        OrderItemType
+  planId      String?       @map("plan_id")
+  reference   String?       // referência do produto/plano (slug ou SKU)
+  description String        // descrição snapshot
+  quantity    Int           @default(1)
+  unitCents   Int           @map("unit_cents")
+  totalCents  Int           @map("total_cents")
+  config      Json          @default("{}") // cor/SKU quando aplicável
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  order Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  plan  Plan?   @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                 String        @id @default(uuid()) @db.Uuid
+  orderId            String        @map("order_id") @db.Uuid
+  provider           String        @default("mercado_pago")
+  providerPaymentId  String?       @unique @map("provider_payment_id")
+  idempotencyKey     String        @unique @map("idempotency_key")
+  method             PaymentMethod @default(OTHER)
+  status             PaymentStatus @default(CREATED)
+  amount             Int           @default(0)
+  sanitizedPayload   Json?         @map("sanitized_payload")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  order  Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events PaymentEvent[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentEvent {
+  id              String   @id @default(cuid())
+  paymentId       String   @map("payment_id") @db.Uuid
+  providerEventId String   @unique @map("provider_event_id")
+  type            String
+  sanitizedPayload Json?   @map("sanitized_payload")
+  processedAt     DateTime @map("processed_at")
+  result          String?  // "processed" | "duplicate" | "error:<msg>"
+  error           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_events")
+}
+
+// ---------------------------------------------------------------------------
+// Produto físico e NFC
+// ---------------------------------------------------------------------------
+
+model NfcTag {
+  id              String       @id @default(uuid()) @db.Uuid
+  publicToken     String       @unique @map("public_token")
+  projectId       String?      @map("project_id") @db.Uuid
+  physicalOrderId String?      @map("physical_order_id") @db.Uuid
+  status          NfcTagStatus @default(GENERATED)
+  destinationUrl  String?      @map("destination_url") // destino atual (troca sem regravar a tag)
+  batchNumber     String?      @map("batch_number")
+  writtenAt       DateTime?    @map("written_at")
+  testedAt        DateTime?    @map("tested_at")
+  activatedAt     DateTime?    @map("activated_at")
+  disabledAt      DateTime?    @map("disabled_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  project       Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  physicalOrder PhysicalOrder?  @relation(fields: [physicalOrderId], references: [id], onDelete: SetNull)
+
+  @@index([publicToken])
+  @@index([projectId])
+  @@index([status])
+  @@map("nfc_tags")
+}
+
+model PhysicalOrder {
+  id             String             @id @default(uuid()) @db.Uuid
+  orderId        String             @unique @map("order_id") @db.Uuid
+  status         PhysicalOrderStatus @default(WAITING_PAYMENT)
+  sku            String?
+  color          String?
+  trackingCode   String?            @map("tracking_code")
+  carrier        String?
+  estimatedDays  Int?               @map("estimated_days")
+  internalNotes  String?            @map("internal_notes")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  order   Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  nfcTags NfcTag[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("physical_orders")
+}
+
+// ---------------------------------------------------------------------------
+// Cupons
+// ---------------------------------------------------------------------------
+
+model Coupon {
+  id           String     @id @default(cuid())
+  code         String     @unique // normalizado (uppercase)
+  type         CouponType
+  value        Int        // centavos (FIXED) ou percentual inteiro 0..100 (PERCENTAGE)
+  validFrom    DateTime?  @map("valid_from")
+  validUntil   DateTime?  @map("valid_until")
+  totalLimit   Int?       @map("total_limit")
+  perCustomerLimit Int?   @map("per_customer_limit")
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  plans       CouponPlan[]
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+model CouponPlan {
+  couponId String @map("coupon_id")
+  planId   String @map("plan_id")
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, planId])
+  @@map("coupon_plans")
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String   @map("coupon_id")
+  orderId   String   @map("order_id") @db.Uuid
+  customerId String? @map("customer_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([orderId])
+  @@map("coupon_redemptions")
+}
+
+// ---------------------------------------------------------------------------
+// Moderação, auditoria e analytics
+// ---------------------------------------------------------------------------
+
+model AbuseReport {
+  id          String            @id @default(cuid())
+  projectId   String            @map("project_id") @db.Uuid
+  reason      String
+  description String?
+  contact     String?
+  status      AbuseReportStatus @default(OPEN)
+  decision    String?
+  resolvedBy  String?           @map("resolved_by")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("abuse_reports")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?  @map("actor_id") @db.Uuid
+  actorRole String?  @map("actor_role")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  before    Json?
+  after     Json?
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  event      String
+  projectId  String?  @map("project_id") @db.Uuid
+  orderId    String?  @map("order_id") @db.Uuid
+  session    String?  // sessão anônima (hash)
+  campaign   String?
+  utm        Json?
+  partnerCode String? @map("partner_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event])
+  @@index([createdAt])
+  @@index([projectId])
+  @@map("analytics_events")
+}

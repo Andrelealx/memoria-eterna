@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/*
+ * Tema da marca (seção 7 do PROMPT MESTRE). Paleta afetiva e premium.
+ * Contraste WCAG AA. O dourado é decorativo (nunca a única cor de texto pequeno).
+ */
+:root {
+  --background: #fff9f5; /* creme */
+  --foreground: #231f20; /* grafite */
+
+  --card: #ffffff;
+  --card-foreground: #231f20;
+
+  --primary: #7a2438; /* vinho */
+  --primary-foreground: #ffffff;
+  --primary-dark: #4b1625; /* vinho escuro */
+
+  --secondary: #f8e8ec; /* rosa muito claro */
+  --secondary-foreground: #4b1625;
+
+  --accent: #c6a15b; /* dourado discreto */
+
+  --muted: #6e6568; /* cinza de texto */
+  --muted-foreground: #6e6568;
+
+  --border: #eadde0; /* borda suave */
+
+  --ring: #d99aaa; /* rosa queimado */
+
+  --success: #247a52;
+  --error: #b42318;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-creme: #fff9f5;
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-error: var(--error);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Foco visível sempre (acessibilidade). */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Respeita preferência de redução de movimento (seção 7). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

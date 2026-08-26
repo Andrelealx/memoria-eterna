@@ -1,0 +1,24 @@
+# PostgreSQL local para desenvolvimento.
+# Uso: docker compose up -d
+# Produção utiliza Supabase (PostgreSQL + Auth + Storage) — ver docs/DEPLOYMENT.md.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: foryoupage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: foryoupage
+    ports:
+      - "5433:5432"
+    volumes:
+      - foryoupage_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d foryoupage"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  foryoupage_pgdata:
