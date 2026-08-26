@@ -2,17 +2,28 @@ import Link from "next/link";
 import { Check, Heart, Link2, QrCode, Smartphone, Sparkles } from "lucide-react";
 import { cn, formatBRL } from "@/lib/utils";
 import { DEFAULT_PLANS } from "@/lib/domain/plans";
-import { DEFAULT_TEMPLATES } from "@/lib/domain/templates";
+import { NICHE_LABELS } from "@/lib/domain/templates";
+import { NICHES } from "@/lib/domain/enums";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BlurFade } from "@/components/ui/blur-fade";
+import { Marquee } from "@/components/ui/marquee";
+import { Spotlight } from "@/components/ui/spotlight";
+import { ShineBorder } from "@/components/ui/shine-border";
+import { FloatingHearts } from "@/components/ui/floating-hearts";
+import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
-// Landing page (seção 9). Layout exato em duas colunas no desktop, uma no mobile.
+// Landing page (seção 9). Layout em duas colunas no desktop, uma no mobile,
+// com animações discretas de entrada e ambiência (padrões Origin UI / Cult UI).
 
 export default function HomePage() {
   return (
     <>
       <Hero />
+      <MarqueeStrip />
       <HowItWorks />
+      <StatsStrip />
       <TemplatesSection />
       <PhysicalSection />
       <PricingSection />
@@ -24,32 +35,48 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-12 sm:px-6 md:grid-cols-2 md:pt-20">
-      <div>
-        <Badge variant="secondary" className="mb-5 gap-1.5 text-sm">
-          <Sparkles className="h-3.5 w-3.5" /> Uma surpresa feita por você
-        </Badge>
-        <h1 className="font-serif text-4xl leading-tight text-foreground md:text-6xl">
-          Suas memórias em um presente que pode ser tocado.
-        </h1>
-        <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
-          Crie uma página com fotos, mensagens e a história de vocês. Se quiser, conecte tudo a um
-          coração com NFC.
-        </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/criar" className={buttonVariants({ size: "lg" })}>
-            Criar meu presente
-          </Link>
-          <Link href="/como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-            Ver como funciona
-          </Link>
-        </div>
-        <p className="mt-5 text-sm text-muted-foreground">
-          A partir de R$ 19,90 · Pronto em poucos minutos
-        </p>
-      </div>
+    <section className="relative overflow-hidden">
+      <FloatingHearts count={16} className="opacity-70" />
+      <Spotlight className="mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 md:pt-20">
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div>
+            <BlurFade>
+              <Badge variant="secondary" className="mb-5 gap-1.5 text-sm">
+                <Sparkles className="h-3.5 w-3.5" /> Uma surpresa feita por você
+              </Badge>
+            </BlurFade>
+            <BlurFade delay={0.08}>
+              <h1 className="font-serif text-4xl leading-tight text-foreground md:text-6xl">
+                Suas memórias em um{" "}
+                <AnimatedGradientText>presente que pode ser tocado</AnimatedGradientText>.
+              </h1>
+            </BlurFade>
+            <BlurFade delay={0.16}>
+              <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
+                Crie uma página com fotos, mensagens e a história de vocês. Se quiser, conecte tudo a um
+                coração com NFC.
+              </p>
+            </BlurFade>
+            <BlurFade delay={0.24}>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
+                  Criar meu presente
+                </Link>
+                <Link href="/como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+                  Ver como funciona
+                </Link>
+              </div>
+            </BlurFade>
+            <BlurFade delay={0.3}>
+              <p className="mt-5 text-sm text-muted-foreground">
+                A partir de R$ 19,90 · Pronto em poucos minutos
+              </p>
+            </BlurFade>
+          </div>
 
-      <HeroVisual />
+          <HeroVisual />
+        </div>
+      </Spotlight>
     </section>
   );
 }
@@ -58,14 +85,16 @@ function HeroVisual() {
   return (
     <div className="relative flex items-center justify-center">
       <div className="relative">
-        <PhoneMockup />
-        <div className="absolute -right-4 -top-6 md:-right-10">
+        <div className="animate-float">
+          <PhoneMockup />
+        </div>
+        <div className="absolute -right-4 -top-6 animate-float [animation-delay:1s] md:-right-10">
           <FloatingTag label="Fotos" />
         </div>
-        <div className="absolute -left-4 top-16 md:-left-10">
+        <div className="absolute -left-4 top-16 animate-float [animation-delay:2s] md:-left-10">
           <FloatingTag label="Nossa história" />
         </div>
-        <div className="absolute -bottom-4 left-6 md:left-10">
+        <div className="absolute -bottom-4 left-6 animate-float [animation-delay:3s] md:left-10">
           <FloatingTag label="NFC" />
         </div>
       </div>
@@ -123,25 +152,55 @@ function HeartKeychain() {
   );
 }
 
+const MARQUEE_ITEMS = [
+  "Fotos",
+  "Mensagens",
+  "Linha do tempo",
+  "Música por embed",
+  "Slug personalizado",
+  "NFC no coração",
+  "QR de contingência",
+  "Privacidade",
+];
+
+function MarqueeStrip() {
+  return (
+    <section className="border-y border-border bg-white py-6">
+      <Marquee pauseOnHover>
+        {MARQUEE_ITEMS.map((item) => (
+          <span key={item} className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Heart className="h-3.5 w-3.5 text-primary/60" />
+            {item}
+          </span>
+        ))}
+      </Marquee>
+    </section>
+  );
+}
+
 function HowItWorks() {
   const steps = [
-    { n: "1", title: "Escolha o estilo", text: "Selecione um template romântico que combine com vocês." },
+    { n: "1", title: "Escolha o estilo", text: "Selecione um template que combine com a ocasião." },
     { n: "2", title: "Conte a história de vocês", text: "Adicione fotos, datas, mensagens e uma música." },
     { n: "3", title: "Envie o link ou presenteie com NFC", text: "Compartilhe pelo WhatsApp ou aproxime o coração do celular." },
   ];
   return (
-    <section className="border-y border-border bg-white">
+    <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <h2 className="text-center font-serif text-3xl md:text-4xl">Como funciona</h2>
+        <BlurFade>
+          <h2 className="text-center font-serif text-3xl md:text-4xl">Como funciona</h2>
+        </BlurFade>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.n} className="rounded-3xl border border-border p-8">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-lg text-primary-foreground">
-                {s.n}
-              </span>
-              <h3 className="mt-5 font-serif text-xl">{s.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{s.text}</p>
-            </div>
+          {steps.map((s, i) => (
+            <BlurFade key={s.n} delay={i * 0.1}>
+              <div className="h-full rounded-3xl border border-border p-8 transition-shadow duration-300 hover:shadow-md">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-lg text-primary-foreground">
+                  {s.n}
+                </span>
+                <h3 className="mt-5 font-serif text-xl">{s.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{s.text}</p>
+              </div>
+            </BlurFade>
           ))}
         </div>
       </div>
@@ -149,31 +208,66 @@ function HowItWorks() {
   );
 }
 
+function StatsStrip() {
+  const stats = [
+    { value: 9, label: "modelos" },
+    { value: 7, label: "nichos para presentear" },
+    { value: 30, label: "fotos no Para Sempre" },
+    { value: 12, label: "momentos na linha do tempo" },
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        {stats.map((s, i) => (
+          <BlurFade key={s.label} delay={i * 0.08} className="text-center">
+            <p className="font-serif text-4xl text-primary md:text-5xl">
+              <NumberTicker value={s.value} />
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{s.label}</p>
+          </BlurFade>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const NICHE_DESCRIPTIONS: Record<string, string> = {
+  romance: "Para quem você ama",
+  amizade: "Para os melhores amigos",
+  familia: "Para a família",
+  pet: "Para o seu pet",
+  aniversario: "Para a data especial",
+  bebe: "Para a chegada",
+  casamento: "Para o grande dia",
+};
+
 function TemplatesSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-      <h2 className="text-center font-serif text-3xl md:text-4xl">Modelos românticos</h2>
-      <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-        Três estilos pensados para contar a história de vocês.
-      </p>
-      <div className="mt-12 grid gap-8 md:grid-cols-3">
-        {DEFAULT_TEMPLATES.map((t) => (
-          <div key={t.slug} className="flex flex-col items-center">
-            <div className="h-[260px] w-[140px] rounded-[1.8rem] border border-border bg-white p-2 shadow-sm">
-              <div className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-secondary">
-                <Heart className="h-8 w-8 text-primary" />
-              </div>
-            </div>
-            <h3 className="mt-4 font-serif text-lg">{t.name}</h3>
+      <BlurFade>
+        <h2 className="text-center font-serif text-3xl md:text-4xl">Modelos para cada ocasião</h2>
+        <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
+          Do romance ao seu pet: escolha um estilo e personalize com fotos, mensagens e música.
+        </p>
+      </BlurFade>
+      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {NICHES.map((niche, i) => (
+          <BlurFade key={niche} delay={i * 0.06}>
             <Link
-              href={`/modelos/${t.slug}`}
-              className="mt-2 text-sm font-medium text-primary hover:underline"
+              href="/modelos"
+              className="group block h-full rounded-3xl border border-border bg-white p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
             >
-              Ver modelo
+              <p className="font-serif text-xl">{NICHE_LABELS[niche]}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{NICHE_DESCRIPTIONS[niche]}</p>
             </Link>
-          </div>
+          </BlurFade>
         ))}
       </div>
+      <BlurFade className="mt-8 text-center">
+        <Link href="/modelos" className="text-sm font-medium text-primary hover:underline">
+          Ver todos os modelos
+        </Link>
+      </BlurFade>
     </section>
   );
 }
@@ -187,7 +281,7 @@ function PhysicalSection() {
   return (
     <section className="bg-primary-dark text-creme">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 sm:px-6 md:grid-cols-2">
-        <div>
+        <BlurFade>
           <h2 className="font-serif text-3xl leading-tight md:text-4xl">
             A tecnologia fica escondida. A emoção aparece quando a pessoa encosta o celular.
           </h2>
@@ -202,7 +296,7 @@ function PhysicalSection() {
               </li>
             ))}
           </ul>
-        </div>
+        </BlurFade>
         <div className="flex justify-center">
           <HeartKeychain />
         </div>
@@ -214,19 +308,15 @@ function PhysicalSection() {
 function PricingSection() {
   const plans = DEFAULT_PLANS;
   return (
-    <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-      <h2 className="text-center font-serif text-3xl md:text-4xl">Escolha o seu presente</h2>
+    <section id="precos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
+      <BlurFade>
+        <h2 className="text-center font-serif text-3xl md:text-4xl">Escolha o seu presente</h2>
+      </BlurFade>
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
-        {plans.map((p) => {
+        {plans.map((p, i) => {
           const featured = p.slug === "para-sempre";
-          return (
-            <div
-              key={p.slug}
-              className={cn(
-                "flex flex-col rounded-3xl border p-8",
-                featured ? "border-primary bg-white shadow-sm" : "border-border bg-white",
-              )}
-            >
+          const inner = (
+            <div className="flex h-full flex-col p-8">
               {featured && (
                 <Badge className="mb-3 self-start" variant="default">
                   Melhor experiência
@@ -247,13 +337,25 @@ function PricingSection() {
               <Link
                 href="/criar"
                 className={buttonVariants({
-                  variant: featured ? "default" : "secondary",
+                  variant: featured ? "shiny" : "secondary",
                   className: "mt-8 w-full",
                 })}
               >
                 Criar meu presente
               </Link>
             </div>
+          );
+
+          return (
+            <BlurFade key={p.slug} delay={i * 0.08} className="h-full">
+              {featured ? (
+                <ShineBorder borderRadius={24} className="h-full">
+                  {inner}
+                </ShineBorder>
+              ) : (
+                <div className={cn("flex h-full flex-col rounded-3xl border border-border bg-white")}>{inner}</div>
+              )}
+            </BlurFade>
           );
         })}
       </div>
@@ -264,7 +366,7 @@ function PricingSection() {
 function planFeatures(slug: string): string[] {
   switch (slug) {
     case "momento":
-      return ["7 dias no ar", "Até 5 fotos", "1 template romântico", "Nomes, mensagem e contador", "Link e WhatsApp"];
+      return ["7 dias no ar", "Até 5 fotos", "1 template à sua escolha", "Nomes, mensagem e contador", "Link e WhatsApp"];
     case "para-sempre":
       return ["Sem data de expiração", "Até 30 fotos", "Linha do tempo com 12 momentos", "Música por embed", "Slug personalizado", "Edição posterior"];
     case "kit-coracao-nfc":
@@ -278,11 +380,13 @@ function PrivacySection() {
   return (
     <section className="border-y border-border bg-white">
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
-        <h2 className="font-serif text-2xl md:text-3xl">Segurança e privacidade</h2>
-        <p className="mt-4 text-muted-foreground">
-          Sua página é pública apenas por link e não aparece em buscas internas. As fotos são
-          protegidas e você, como proprietário, pode solicitar a exclusão a qualquer momento.
-        </p>
+        <BlurFade>
+          <h2 className="font-serif text-2xl md:text-3xl">Segurança e privacidade</h2>
+          <p className="mt-4 text-muted-foreground">
+            Sua página é pública apenas por link e não aparece em buscas internas. As fotos são
+            protegidas e você, como proprietário, pode solicitar a exclusão a qualquer momento.
+          </p>
+        </BlurFade>
       </div>
     </section>
   );
@@ -300,15 +404,19 @@ function FaqSection() {
   ];
   return (
     <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-      <h2 className="text-center font-serif text-3xl md:text-4xl">Perguntas frequentes</h2>
+      <BlurFade>
+        <h2 className="text-center font-serif text-3xl md:text-4xl">Perguntas frequentes</h2>
+      </BlurFade>
       <div className="mt-10 space-y-3">
-        {faqs.map((f) => (
-          <details key={f.q} className="group rounded-2xl border border-border bg-white p-5">
-            <summary className="cursor-pointer list-none font-medium text-foreground">
-              {f.q}
-            </summary>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">{f.a}</p>
-          </details>
+        {faqs.map((f, i) => (
+          <BlurFade key={f.q} delay={i * 0.05}>
+            <details className="group rounded-2xl border border-border bg-white p-5">
+              <summary className="cursor-pointer list-none font-medium text-foreground">
+                {f.q}
+              </summary>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{f.a}</p>
+            </details>
+          </BlurFade>
         ))}
       </div>
     </section>

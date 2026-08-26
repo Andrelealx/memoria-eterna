@@ -14,7 +14,7 @@ import {
   OrderItemType,
 } from "@prisma/client";
 import { DEFAULT_PLANS } from "../src/lib/domain/plans";
-import { DEFAULT_TEMPLATES } from "../src/lib/domain/templates";
+import { DEFAULT_TEMPLATES, NICHE_LABELS } from "../src/lib/domain/templates";
 import {
   generateNfcToken,
   generatePublicToken,
@@ -33,23 +33,29 @@ function normalizeEmail(email: string): string {
 }
 
 async function main() {
-  // 1. Categoria Romance
-  const category = await prisma.category.upsert({
-    where: { slug: "romance" },
-    update: {},
-    create: { name: "Romance", slug: "romance", status: "ACTIVE", order: 1 },
-  });
+  // 1. Categorias (nichos)
+  const categoryIds = new Map<string, string>();
+  for (const [niche, label] of Object.entries(NICHE_LABELS)) {
+    const category = await prisma.category.upsert({
+      where: { slug: niche },
+      update: { name: label },
+      create: { name: label, slug: niche, status: "ACTIVE", order: 1 },
+    });
+    categoryIds.set(niche, category.id);
+  }
 
   // 2. Templates
   for (const t of DEFAULT_TEMPLATES) {
+    const categoryId = categoryIds.get(t.niche);
+    if (!categoryId) continue;
     await prisma.template.upsert({
       where: { slug: t.slug },
-      update: { name: t.name, description: t.description, presets: t.presets },
+      update: { name: t.name, description: t.description, presets: t.presets, categoryId },
       create: {
         slug: t.slug,
         name: t.name,
         description: t.description,
-        categoryId: category.id,
+        categoryId,
         presets: t.presets,
         status: "ACTIVE",
       },

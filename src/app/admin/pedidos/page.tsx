@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
-import { PHYSICAL_ORDER_LABELS, formatDate } from "@/lib/labels";
+import { Badge } from "@/components/ui/badge";
+import { PAYMENT_STATUS_LABELS, PHYSICAL_ORDER_LABELS, formatDate, statusVariant } from "@/lib/labels";
 
 export const metadata = { title: "Pedidos" };
 
@@ -37,9 +38,23 @@ export default async function AdminPedidosPage() {
                 </td>
                 <td className="py-2 pr-4">{formatDate(o.createdAt)}</td>
                 <td className="py-2 pr-4">{formatBRL(o.total)}</td>
-                <td className="py-2 pr-4">{o.payments[0]?.status ?? "—"}</td>
                 <td className="py-2 pr-4">
-                  {o.physicalOrder ? PHYSICAL_ORDER_LABELS[o.physicalOrder.status] ?? o.physicalOrder.status : "—"}
+                  {o.payments[0] ? (
+                    <Badge variant={statusVariant(o.payments[0].status)}>
+                      {PAYMENT_STATUS_LABELS[o.payments[0].status] ?? o.payments[0].status}
+                    </Badge>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-2 pr-4">
+                  {o.physicalOrder ? (
+                    <Badge variant={statusVariant(o.physicalOrder.status)}>
+                      {PHYSICAL_ORDER_LABELS[o.physicalOrder.status] ?? o.physicalOrder.status}
+                    </Badge>
+                  ) : (
+                    "—"
+                  )}
                 </td>
               </tr>
             ))}

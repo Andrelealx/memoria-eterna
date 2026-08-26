@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-auth";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
-import { PROJECT_STATUS_LABELS } from "@/lib/labels";
+import { PROJECT_STATUS_LABELS, statusVariant } from "@/lib/labels";
 
 export const metadata = { title: "Meus presentes" };
 
@@ -41,7 +41,7 @@ export default async function PresentesPage() {
                 className="block rounded-3xl border border-border bg-white p-5 transition-colors hover:border-primary"
               >
                 <div className="flex items-center justify-between">
-                  <Badge variant="muted">{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>
+                  <Badge variant={statusVariant(p.status)}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>
                 </div>
                 <p className="mt-3 font-serif text-xl">{names(p.content)}</p>
                 {p.status === "PUBLISHED" && p.slug && (

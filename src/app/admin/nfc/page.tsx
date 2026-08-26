@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/db";
 import { NFC_TAG_TRANSITIONS } from "@/lib/domain/state-machine";
-import { NFC_TAG_LABELS, formatDate } from "@/lib/labels";
+import { NFC_TAG_LABELS, formatDate, statusVariant } from "@/lib/labels";
 import { generateQrDataUrl, nfcUrl } from "@/lib/server/qr";
 import { GenerateTag } from "@/components/admin/generate-tag";
 import { TagActions } from "@/components/admin/tag-actions";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Tags NFC" };
 
@@ -34,9 +35,10 @@ export default async function AdminNfcPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-mono text-sm">{nfcUrl(tag.publicToken)}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {NFC_TAG_LABELS[tag.status] ?? tag.status} · {formatDate(tag.createdAt)}
-                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge variant={statusVariant(tag.status)}>{NFC_TAG_LABELS[tag.status] ?? tag.status}</Badge>
+                  <span className="text-xs text-muted-foreground">{formatDate(tag.createdAt)}</span>
+                </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qr} alt="QR Code" className="h-16 w-16 rounded" />

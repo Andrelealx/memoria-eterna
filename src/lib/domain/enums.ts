@@ -6,6 +6,17 @@ import { z } from "zod";
 export const ROLES = ["CUSTOMER", "OPERATOR", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
+export const NICHES = [
+  "romance",
+  "amizade",
+  "familia",
+  "pet",
+  "aniversario",
+  "bebe",
+  "casamento",
+] as const;
+export type Niche = (typeof NICHES)[number];
+
 export const PROJECT_STATUSES = [
   "DRAFT",
   "AWAITING_PAYMENT",
@@ -73,6 +84,7 @@ export type CouponType = (typeof COUPON_TYPES)[number];
 
 // Zod enums reutilizáveis (validação compartilhada).
 export const roleSchema = z.enum(ROLES);
+export const nicheSchema = z.enum(NICHES);
 export const projectStatusSchema = z.enum(PROJECT_STATUSES);
 export const paymentStatusSchema = z.enum(PAYMENT_STATUSES);
 export const orderStatusSchema = z.enum(ORDER_STATUSES);

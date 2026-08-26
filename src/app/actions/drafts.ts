@@ -9,7 +9,10 @@ import { resolveProjectPhotos, type PhotoRef, type PublicPhoto } from "@/lib/ser
 // vive no servidor; o rascunho é retomável via `draft_token`.
 
 export async function createDraft(templateSlug: string): Promise<{ draftToken: string }> {
-  const template = await prisma.template.findUnique({ where: { slug: templateSlug } });
+  const template = await prisma.template.findUnique({
+    where: { slug: templateSlug },
+    include: { category: true },
+  });
   if (!template) throw new Error("[draft] Template inválido.");
 
   const draftToken = generateDraftToken();
@@ -19,7 +22,7 @@ export async function createDraft(templateSlug: string): Promise<{ draftToken: s
       templateId: template.id,
       templateVersion: template.version,
       status: "DRAFT",
-      content: { schemaVersion: 1, niche: "romance" },
+      content: { schemaVersion: 1, niche: template.category.slug },
     },
   });
 

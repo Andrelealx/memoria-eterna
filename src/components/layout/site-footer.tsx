@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { brand } from "@/lib/brand";
 
 const FOOTER_LINKS = [
-  { href: "/como-funciona", label: "Como funciona" },
+  { href: "/#como-funciona", label: "Como funciona" },
   { href: "/modelos", label: "Modelos" },
-  { href: "/precos", label: "Preços" },
+  { href: "/#precos", label: "Preços" },
   { href: "/ajuda", label: "Ajuda" },
   { href: "/termos", label: "Termos" },
   { href: "/privacidade", label: "Privacidade" },
@@ -37,7 +38,10 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-sm text-muted-foreground">
-          <p>
+          <p className="flex items-center gap-1">
+            Feito com <Heart className="h-3.5 w-3.5 text-primary" aria-hidden="true" /> para celebrar memórias
+          </p>
+          <p className="mt-2">
             © {year} {brand.name}. Todos os direitos reservados.
           </p>
           {brand.legal.companyName && (

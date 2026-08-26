@@ -9,9 +9,18 @@ import { brand } from "@/lib/brand";
 // Página pública publicada (seção 11). SEO noindex por padrão para proteger a
 // privacidade. Não usa o layout de marketing (header/footer institucional).
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const data = await getPublishedProject(slug);
+  return {
+    title: data ? `${data.content.creatorName} & ${data.content.recipientName}` : brand.name,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function PublicGiftPage({
   params,
@@ -40,7 +49,7 @@ export default async function PublicGiftPage({
           </Link>
         </div>
         <p className="pb-6 text-center text-xs text-muted-foreground">
-          Feito com {brand.name}
+          Feito com <span className="text-primary">♥</span> {brand.name}
         </p>
       </footer>
     </div>

@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Loader2, Plus, Trash2, X } from "lucide-react";
 import { createDraft, loadDraft, saveDraft } from "@/app/actions/drafts";
 import { uploadPhoto } from "@/app/actions/photos";
 import { startCheckout } from "@/app/actions/checkout";
-import { DEFAULT_TEMPLATES } from "@/lib/domain/templates";
+import { DEFAULT_TEMPLATES, NICHE_LABELS, templatesByNiche } from "@/lib/domain/templates";
+import { NICHES } from "@/lib/domain/enums";
 import { DEFAULT_PLANS } from "@/lib/domain/plans";
 import type { ProjectContent } from "@/lib/domain/projects";
 import { parseMusicUrl } from "@/lib/domain/music";
@@ -20,7 +22,34 @@ import { TemplateRenderer } from "@/components/templates";
 import { cn, formatBRL } from "@/lib/utils";
 
 const STORAGE_KEY = "foryoupage:draftToken";
-const STEPS = ["Modelo", "Informações", "Fotos", "Nossa história", "Música e detalhes", "Prévia e plano"];
+const STEPS = [
+  "Modelo",
+  "Informações",
+  "Fotos",
+  "Nossa história",
+  "Música e detalhes",
+  "Prévia e plano",
+];
+
+const RECIPIENT_LABELS: Record<string, string> = {
+  romance: "Nome de quem vai receber",
+  amizade: "Nome do(a) amigo(a)",
+  familia: "Nome de quem recebe",
+  pet: "Nome do pet",
+  aniversario: "Nome do(a) aniversariante",
+  bebe: "Nome do bebê",
+  casamento: "Nome de quem recebe",
+};
+
+const STORY_LABELS: Record<string, string> = {
+  romance: "Nossa história",
+  amizade: "Nossos momentos",
+  familia: "Nossa história",
+  pet: "Marcos da vida",
+  aniversario: "Momentos especiais",
+  bebe: "Primeiros momentos",
+  casamento: "Nossa história",
+};
 
 const EMPTY_CONTENT: ProjectContent = {
   schemaVersion: 1,
@@ -102,6 +131,8 @@ export function CreationWizard() {
       localStorage.setItem(STORAGE_KEY, token);
       setDraftToken(token);
       setTemplateSlug(slug);
+      const tpl = DEFAULT_TEMPLATES.find((t) => t.slug === slug);
+      if (tpl) setContent((c) => ({ ...c, niche: tpl.niche }));
       setStep(1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível iniciar.");
@@ -178,7 +209,13 @@ export function CreationWizard() {
         const res = await uploadPhoto(fd);
         setPhotos((prev) => [
           ...prev,
-          { assetId: res.assetId, url: res.url, altText: "", position: prev.length, isCover: prev.length === 0 },
+          {
+            assetId: res.assetId,
+            url: res.url,
+            altText: "",
+            position: prev.length,
+            isCover: prev.length === 0,
+          },
         ]);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Falha no upload de uma foto.");
@@ -198,6 +235,18 @@ export function CreationWizard() {
     setPhotos((prev) => prev.map((p) => ({ ...p, isCover: p.assetId === assetId })));
   }
 
+  function movePhoto(assetId: string, dir: "up" | "down") {
+    setPhotos((prev) => {
+      const idx = prev.findIndex((p) => p.assetId === assetId);
+      if (idx === -1) return prev;
+      const target = dir === "up" ? idx - 1 : idx + 1;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next.map((p, i) => ({ ...p, position: i }));
+    });
+  }
+
   function updateAlt(assetId: string, altText: string) {
     setPhotos((prev) => prev.map((p) => (p.assetId === assetId ? { ...p, altText } : p)));
   }
@@ -205,308 +254,377 @@ export function CreationWizard() {
   const template = DEFAULT_TEMPLATES.find((t) => t.slug === templateSlug) ?? DEFAULT_TEMPLATES[0];
 
   if (resuming) {
-    return <p className="py-20 text-center text-muted-foreground">Carregando…</p>;
+    return <p className="text-muted-foreground py-20 text-center">Carregando…</p>;
   }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       {/* Barra de progresso */}
       <div className="mb-8">
-        <p className="text-sm text-muted-foreground">
-          Etapa {step + 1} de {STEPS.length} — {STEPS[step]}
-        </p>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-          />
+        <div className="flex items-baseline justify-between">
+          <p className="text-foreground font-serif text-lg">
+            {step === 3 ? (STORY_LABELS[template.niche] ?? STEPS[step]) : STEPS[step]}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            Etapa {step + 1} de {STEPS.length}
+          </p>
+        </div>
+        <div className="mt-3 flex gap-1.5" aria-hidden="true">
+          {STEPS.map((label, i) => (
+            <div
+              key={label}
+              className={cn(
+                "h-1.5 flex-1 rounded-full transition-colors duration-300",
+                i <= step ? "from-primary to-accent bg-gradient-to-r" : "bg-secondary",
+              )}
+            />
+          ))}
         </div>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-xl border border-error/30 bg-error/10 px-4 py-2 text-sm text-error">
+        <p className="border-error/30 bg-error/10 text-error mb-4 rounded-xl border px-4 py-2 text-sm">
           {error}
         </p>
       )}
 
-      {step === 0 && (
-        <Step0 selected={templateSlug} onSelect={chooseTemplate} busy={busy} />
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
+          {step === 0 && <Step0 selected={templateSlug} onSelect={chooseTemplate} busy={busy} />}
 
-      {step === 1 && (
-        <div className="space-y-5">
-          <Field label="Seu nome (quem cria)">
-            <Input value={content.creatorName} onChange={(e) => set("creatorName", e.target.value)} />
-          </Field>
-          <Field label="Nome de quem vai receber">
-            <Input value={content.recipientName} onChange={(e) => set("recipientName", e.target.value)} />
-          </Field>
-          <Field label="Título da página">
-            <Input value={content.title} onChange={(e) => set("title", e.target.value)} />
-          </Field>
-          <Field label="Início do relacionamento">
-            <Input
-              type="date"
-              value={content.relationshipDate}
-              onChange={(e) => set("relationshipDate", e.target.value)}
-            />
-          </Field>
-          <Field label="Mensagem principal">
-            <Textarea
-              value={content.message}
-              onChange={(e) => set("message", e.target.value)}
-              rows={5}
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={content.counterEnabled}
-              onChange={(e) => set("counterEnabled", e.target.checked)}
-              className="h-4 w-4"
-            />
-            Mostrar contador “Juntos há…”
-          </label>
-        </div>
-      )}
+          {step === 1 && (
+            <div className="space-y-5">
+              <Field label="Seu nome (quem cria)">
+                <Input
+                  value={content.creatorName}
+                  onChange={(e) => set("creatorName", e.target.value)}
+                />
+              </Field>
+              <Field label={RECIPIENT_LABELS[template.niche] ?? "Nome de quem vai receber"}>
+                <Input
+                  value={content.recipientName}
+                  onChange={(e) => set("recipientName", e.target.value)}
+                />
+              </Field>
+              <Field label="Título da página">
+                <Input value={content.title} onChange={(e) => set("title", e.target.value)} />
+              </Field>
+              {template.niche === "romance" && (
+                <Field label="Início do relacionamento">
+                  <Input
+                    type="date"
+                    value={content.relationshipDate}
+                    onChange={(e) => set("relationshipDate", e.target.value)}
+                  />
+                </Field>
+              )}
+              <Field label="Mensagem principal">
+                <Textarea
+                  value={content.message}
+                  onChange={(e) => set("message", e.target.value)}
+                  rows={5}
+                />
+              </Field>
+              {template.niche === "romance" && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={content.counterEnabled}
+                    onChange={(e) => set("counterEnabled", e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  Mostrar contador “Juntos há…”
+                </label>
+              )}
+            </div>
+          )}
 
-      {step === 2 && (
-        <div className="space-y-5">
-          <div>
-            <Label>Fotos</Label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
-              multiple
-              disabled={busy || !draftToken}
-              onChange={(e) => handleFiles(e.target.files)}
-              className="mt-2 block w-full text-sm text-muted-foreground"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              JPEG, PNG, WebP ou HEIC · até 15 MB por foto.
-            </p>
-          </div>
-          {photos.length > 0 && (
-            <ul className="grid grid-cols-3 gap-3">
-              {photos.map((p) => (
-                <li key={p.assetId} className="group relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt={p.altText} className="aspect-[3/4] w-full rounded-xl object-cover" />
-                  {p.isCover && <Badge className="absolute left-1 top-1">Capa</Badge>}
-                  <div className="absolute right-1 top-1 flex gap-1">
+          {step === 2 && (
+            <div className="space-y-5">
+              <div>
+                <Label>Fotos</Label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  multiple
+                  disabled={busy || !draftToken}
+                  onChange={(e) => handleFiles(e.target.files)}
+                  className="text-muted-foreground mt-2 block w-full text-sm"
+                />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  JPEG, PNG, WebP ou HEIC · até 15 MB por foto.
+                </p>
+              </div>
+              {photos.length > 0 && (
+                <ul className="grid grid-cols-3 gap-3">
+                  {photos.map((p, i) => (
+                    <li key={p.assetId} className="group relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.url}
+                        alt={p.altText}
+                        className="aspect-[3/4] w-full rounded-xl object-cover"
+                      />
+                      {p.isCover && <Badge className="absolute top-1 left-1">Capa</Badge>}
+                      <div className="absolute bottom-1 left-1 flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(p.assetId, "up")}
+                          disabled={i === 0}
+                          className="rounded-full bg-white/90 p-1 disabled:opacity-40"
+                          title="Mover para cima"
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(p.assetId, "down")}
+                          disabled={i === photos.length - 1}
+                          className="rounded-full bg-white/90 p-1 disabled:opacity-40"
+                          title="Mover para baixo"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="absolute top-1 right-1 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setCover(p.assetId)}
+                          className="rounded-full bg-white/90 p-1 text-xs"
+                          title="Definir como capa"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(p.assetId)}
+                          className="rounded-full bg-white/90 p-1"
+                          title="Remover"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <input
+                        value={p.altText}
+                        onChange={(e) => updateAlt(p.assetId, e.target.value)}
+                        placeholder="Descrição da foto"
+                        className="border-border mt-1 w-full rounded-md border px-2 py-1 text-xs"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              {content.moments.map((m, i) => (
+                <div key={m.id} className="border-border rounded-2xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Momento {i + 1}</p>
                     <button
                       type="button"
-                      onClick={() => setCover(p.assetId)}
-                      className="rounded-full bg-white/90 p-1 text-xs"
-                      title="Definir como capa"
+                      onClick={() =>
+                        set(
+                          "moments",
+                          content.moments.filter((x) => x.id !== m.id),
+                        )
+                      }
+                      className="text-muted-foreground hover:text-error"
                     >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(p.assetId)}
-                      className="rounded-full bg-white/90 p-1"
-                      title="Remover"
-                    >
-                      <X className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <input
-                    value={p.altText}
-                    onChange={(e) => updateAlt(p.assetId, e.target.value)}
-                    placeholder="Descrição da foto"
-                    className="mt-1 w-full rounded-md border border-border px-2 py-1 text-xs"
-                  />
-                </li>
+                  <div className="mt-3 space-y-3">
+                    <Input
+                      placeholder="Data (ex.: 14 de junho)"
+                      value={m.date ?? ""}
+                      onChange={(e) =>
+                        set(
+                          "moments",
+                          content.moments.map((x) =>
+                            x.id === m.id ? { ...x, date: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Título"
+                      value={m.title}
+                      onChange={(e) =>
+                        set(
+                          "moments",
+                          content.moments.map((x) =>
+                            x.id === m.id ? { ...x, title: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <Textarea
+                      placeholder="Texto"
+                      value={m.text}
+                      onChange={(e) =>
+                        set(
+                          "moments",
+                          content.moments.map((x) =>
+                            x.id === m.id ? { ...x, text: e.target.value } : x,
+                          ),
+                        )
+                      }
+                      rows={2}
+                    />
+                  </div>
+                </div>
               ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="space-y-5">
-          {content.moments.map((m, i) => (
-            <div key={m.id} className="rounded-2xl border border-border p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Momento {i + 1}</p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    set(
-                      "moments",
-                      content.moments.filter((x) => x.id !== m.id),
-                    )
-                  }
-                  className="text-muted-foreground hover:text-error"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-3 space-y-3">
-                <Input
-                  placeholder="Data (ex.: 14 de junho)"
-                  value={m.date ?? ""}
-                  onChange={(e) =>
-                    set(
-                      "moments",
-                      content.moments.map((x) => (x.id === m.id ? { ...x, date: e.target.value } : x)),
-                    )
-                  }
-                />
-                <Input
-                  placeholder="Título"
-                  value={m.title}
-                  onChange={(e) =>
-                    set(
-                      "moments",
-                      content.moments.map((x) => (x.id === m.id ? { ...x, title: e.target.value } : x)),
-                    )
-                  }
-                />
-                <Textarea
-                  placeholder="Texto"
-                  value={m.text}
-                  onChange={(e) =>
-                    set(
-                      "moments",
-                      content.moments.map((x) => (x.id === m.id ? { ...x, text: e.target.value } : x)),
-                    )
-                  }
-                  rows={2}
-                />
-              </div>
-            </div>
-          ))}
-          <Button
-            variant="secondary"
-            onClick={() =>
-              set("moments", [
-                ...content.moments,
-                { id: crypto.randomUUID(), date: "", title: "", text: "" },
-              ])
-            }
-          >
-            <Plus className="h-4 w-4" /> Adicionar momento
-          </Button>
-        </div>
-      )}
-
-      {step === 4 && (
-        <div className="space-y-5">
-          <Field label="Música (link do Spotify ou YouTube)">
-            <Input
-              placeholder="https://open.spotify.com/track/…"
-              value={musicInput}
-              onChange={(e) => {
-                setMusicInput(e.target.value);
-                set("music", parseMusicUrl(e.target.value));
-              }}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              {content.music ? "Música válida." : "Somente links do Spotify ou YouTube."}
-            </p>
-          </Field>
-          <Field label="Frase final">
-            <Input value={content.finalPhrase} onChange={(e) => set("finalPhrase", e.target.value)} />
-          </Field>
-          <Field label="Cores (presets do modelo)">
-            <select
-              value={content.colorScheme}
-              onChange={(e) => set("colorScheme", e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-white px-3 text-base"
-            >
-              {template.presets.colorSchemes.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-      )}
-
-      {step === 5 && (
-        <div className="space-y-6">
-          <div className="overflow-hidden rounded-3xl border border-border">
-            <div className="max-h-[60vh] overflow-y-auto">
-              <TemplateRenderer
-                slug={templateSlug}
-                content={{
-                  ...content,
-                  creatorName: content.creatorName || "Seu nome",
-                  recipientName: content.recipientName || "Quem recebe",
-                }}
-                photos={photos}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            {DEFAULT_PLANS.map((p) => (
-              <button
-                key={p.slug}
-                type="button"
-                onClick={() => setPlanSlug(p.slug)}
-                className={cn(
-                  "rounded-2xl border p-4 text-left transition-colors",
-                  planSlug === p.slug ? "border-primary bg-white" : "border-border bg-white",
-                )}
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  set("moments", [
+                    ...content.moments,
+                    { id: crypto.randomUUID(), date: "", title: "", text: "" },
+                  ])
+                }
               >
-                <p className="font-serif text-lg">{p.name}</p>
-                <p className="text-sm text-muted-foreground">{formatBRL(p.priceCents)}</p>
-              </button>
-            ))}
-          </div>
-
-          <label className="flex items-start gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4"
-            />
-            <span>
-              Li e aceito os <Link href="/termos" className="underline">Termos</Link> e a{" "}
-              <Link href="/privacidade" className="underline">Política de Privacidade</Link>, e
-              confirmo que tenho autorização para usar as imagens e o conteúdo enviado.
-            </span>
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Seu e-mail (para receber o acesso)">
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@email.com"
-              />
-            </Field>
-            <Field label="Seu nome">
-              <Input value={buyerName} onChange={(e) => setBuyerName(e.target.value)} />
-            </Field>
-          </div>
-
-          <div>
-            <Label>Forma de pagamento</Label>
-            <div className="mt-1.5 grid grid-cols-2 gap-3">
-              {(["PIX", "CARD"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMethod(m)}
-                  className={cn(
-                    "rounded-xl border px-4 py-3 text-sm font-medium",
-                    method === m ? "border-primary bg-white text-primary" : "border-border bg-white",
-                  )}
-                >
-                  {m === "PIX" ? "Pix" : "Cartão"}
-                </button>
-              ))}
+                <Plus className="h-4 w-4" /> Adicionar momento
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          {step === 4 && (
+            <div className="space-y-5">
+              <Field label="Música (link do Spotify ou YouTube)">
+                <Input
+                  placeholder="https://open.spotify.com/track/…"
+                  value={musicInput}
+                  onChange={(e) => {
+                    setMusicInput(e.target.value);
+                    set("music", parseMusicUrl(e.target.value));
+                  }}
+                />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {content.music ? "Música válida." : "Somente links do Spotify ou YouTube."}
+                </p>
+              </Field>
+              <Field label="Frase final">
+                <Input
+                  value={content.finalPhrase}
+                  onChange={(e) => set("finalPhrase", e.target.value)}
+                />
+              </Field>
+              <Field label="Cores (presets do modelo)">
+                <select
+                  value={content.colorScheme}
+                  onChange={(e) => set("colorScheme", e.target.value)}
+                  className="border-border h-11 w-full rounded-xl border bg-white px-3 text-base"
+                >
+                  {template.presets.colorSchemes.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-6">
+              <div className="border-border overflow-hidden rounded-3xl border">
+                <div className="max-h-[60vh] overflow-y-auto">
+                  <TemplateRenderer
+                    slug={templateSlug}
+                    content={{
+                      ...content,
+                      creatorName: content.creatorName || "Seu nome",
+                      recipientName: content.recipientName || "Quem recebe",
+                    }}
+                    photos={photos}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                {DEFAULT_PLANS.map((p) => (
+                  <button
+                    key={p.slug}
+                    type="button"
+                    onClick={() => setPlanSlug(p.slug)}
+                    className={cn(
+                      "rounded-2xl border p-4 text-left transition-colors",
+                      planSlug === p.slug ? "border-primary bg-white" : "border-border bg-white",
+                    )}
+                  >
+                    <p className="font-serif text-lg">{p.name}</p>
+                    <p className="text-muted-foreground text-sm">{formatBRL(p.priceCents)}</p>
+                  </button>
+                ))}
+              </div>
+
+              <label className="text-muted-foreground flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4"
+                />
+                <span>
+                  Li e aceito os{" "}
+                  <Link href="/termos" className="underline">
+                    Termos
+                  </Link>{" "}
+                  e a{" "}
+                  <Link href="/privacidade" className="underline">
+                    Política de Privacidade
+                  </Link>
+                  , e confirmo que tenho autorização para usar as imagens e o conteúdo enviado.
+                </span>
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Seu e-mail (para receber o acesso)">
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="voce@email.com"
+                  />
+                </Field>
+                <Field label="Seu nome">
+                  <Input value={buyerName} onChange={(e) => setBuyerName(e.target.value)} />
+                </Field>
+              </div>
+
+              <div>
+                <Label>Forma de pagamento</Label>
+                <div className="mt-1.5 grid grid-cols-2 gap-3">
+                  {(["PIX", "CARD"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMethod(m)}
+                      className={cn(
+                        "rounded-xl border px-4 py-3 text-sm font-medium",
+                        method === m
+                          ? "border-primary text-primary bg-white"
+                          : "border-border bg-white",
+                      )}
+                    >
+                      {m === "PIX" ? "Pix" : "Cartão"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navegação */}
       <div className="mt-8 flex items-center justify-between">
@@ -538,26 +656,40 @@ function Step0({
   onSelect: (slug: string) => Promise<void>;
   busy: boolean;
 }) {
+  const byNiche = templatesByNiche();
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      {DEFAULT_TEMPLATES.map((t) => (
-        <button
-          key={t.slug}
-          type="button"
-          disabled={busy}
-          onClick={() => onSelect(t.slug)}
-          className={cn(
-            "rounded-3xl border p-6 text-left transition-colors",
-            selected === t.slug ? "border-primary bg-white" : "border-border bg-white hover:border-primary",
-          )}
-        >
-          <div className="mb-3 flex h-24 items-center justify-center rounded-2xl bg-secondary">
-            <span className="font-serif text-3xl text-primary">{t.name.slice(0, 1)}</span>
+    <div className="space-y-10">
+      {NICHES.map((niche) => {
+        const templates = byNiche[niche];
+        if (templates.length === 0) return null;
+        return (
+          <div key={niche}>
+            <h2 className="mb-3 font-serif text-xl">{NICHE_LABELS[niche]}</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {templates.map((t) => (
+                <button
+                  key={t.slug}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onSelect(t.slug)}
+                  className={cn(
+                    "rounded-3xl border p-6 text-left transition-colors",
+                    selected === t.slug
+                      ? "border-primary bg-white"
+                      : "border-border hover:border-primary bg-white",
+                  )}
+                >
+                  <div className="bg-secondary mb-3 flex h-24 items-center justify-center rounded-2xl">
+                    <span className="text-primary font-serif text-3xl">{t.name.slice(0, 1)}</span>
+                  </div>
+                  <p className="font-serif text-lg">{t.name}</p>
+                  <p className="text-muted-foreground mt-1 text-xs leading-5">{t.description}</p>
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="font-serif text-lg">{t.name}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.description}</p>
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -573,6 +705,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function musicInputHint(content: ProjectContent): string {
   if (!content.music) return "";
-  if (content.music.provider === "spotify") return `https://open.spotify.com/${content.music.kind}/${content.music.id}`;
+  if (content.music.provider === "spotify")
+    return `https://open.spotify.com/${content.music.kind}/${content.music.id}`;
   return `https://www.youtube.com/watch?v=${content.music.id}`;
 }

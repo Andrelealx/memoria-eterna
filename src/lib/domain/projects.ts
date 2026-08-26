@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nicheSchema } from "./enums";
 
 // Schema de conteúdo do projeto (seções 10, 11, 15). Versionado: mudanças no
 // contrato exigem bump em `CURRENT_CONTENT_VERSION` e migração de dados antigos.
@@ -34,7 +35,7 @@ const pronounsSchema = z.object({
 
 export const projectContentSchema = z.object({
   schemaVersion: z.number().int().positive().default(CURRENT_CONTENT_VERSION),
-  niche: z.literal("romance"),
+  niche: nicheSchema,
   creatorName: z.string().min(1).max(120),
   recipientName: z.string().min(1).max(120),
   title: z.string().min(1).max(120),

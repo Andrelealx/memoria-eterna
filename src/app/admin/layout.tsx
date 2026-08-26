@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { requireRole } from "@/lib/auth/require-auth";
 import { logout } from "@/app/actions/auth";
 import { Logo } from "@/components/ui/logo";
+import { ActiveNavLink } from "@/components/ui/active-nav-link";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard" },
@@ -37,13 +37,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
         <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2 text-sm">
           {LINKS.map((l) => (
-            <Link
+            <ActiveNavLink
               key={l.href}
               href={l.href}
               className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-secondary hover:text-primary"
+              activeClassName="bg-secondary font-medium text-primary"
             >
               {l.label}
-            </Link>
+            </ActiveNavLink>
           ))}
         </nav>
       </header>

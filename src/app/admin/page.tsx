@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Admin" };
 
@@ -42,10 +43,7 @@ export default async function AdminDashboard() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-border bg-white p-5">
-            <p className="text-sm text-muted-foreground">{c.label}</p>
-            <p className="mt-1 font-serif text-3xl">{c.value}</p>
-          </div>
+          <StatCard key={c.label} label={c.label} value={c.value} />
         ))}
       </div>
 

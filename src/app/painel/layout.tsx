@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-auth";
 import { logout } from "@/app/actions/auth";
 import { Logo } from "@/components/ui/logo";
+import { ActiveNavLink } from "@/components/ui/active-nav-link";
 
 export default async function PainelLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
@@ -20,13 +20,14 @@ export default async function PainelLayout({ children }: { children: ReactNode }
           <Logo />
           <nav className="flex items-center gap-4 text-sm">
             {links.map((l) => (
-              <Link
+              <ActiveNavLink
                 key={l.href}
                 href={l.href}
                 className="text-muted-foreground transition-colors hover:text-primary"
+                activeClassName="font-medium text-primary"
               >
                 {l.label}
-              </Link>
+              </ActiveNavLink>
             ))}
             <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
             <form action={logout}>

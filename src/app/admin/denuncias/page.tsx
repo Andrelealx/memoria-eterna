@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/labels";
+import { Badge } from "@/components/ui/badge";
+import { REPORT_STATUS_LABELS, formatDate, statusVariant } from "@/lib/labels";
 
 export const metadata = { title: "Denúncias" };
 
@@ -21,7 +22,7 @@ export default async function AdminDenunciasPage() {
             <li key={r.id} className="rounded-2xl border border-border bg-white px-5 py-4">
               <div className="flex items-center justify-between">
                 <p className="font-medium">{r.reason}</p>
-                <span className="text-xs text-muted-foreground">{r.status}</span>
+                <Badge variant={statusVariant(r.status)}>{REPORT_STATUS_LABELS[r.status] ?? r.status}</Badge>
               </div>
               {r.description && <p className="mt-1 text-sm text-muted-foreground">{r.description}</p>}
               <p className="mt-2 text-xs text-muted-foreground">

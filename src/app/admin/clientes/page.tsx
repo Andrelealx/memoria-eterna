@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/labels";
+import { Badge } from "@/components/ui/badge";
+import { ROLE_LABELS, formatDate, roleVariant } from "@/lib/labels";
 
 export const metadata = { title: "Clientes" };
 
@@ -24,7 +25,9 @@ export default async function AdminClientesPage() {
               <tr key={u.id} className="border-b border-border">
                 <td className="py-2 pr-4">{u.email}</td>
                 <td className="py-2 pr-4">{u.name ?? "—"}</td>
-                <td className="py-2 pr-4">{u.role}</td>
+                <td className="py-2 pr-4">
+                  <Badge variant={roleVariant(u.role)}>{ROLE_LABELS[u.role] ?? u.role}</Badge>
+                </td>
                 <td className="py-2 pr-4">{formatDate(u.createdAt)}</td>
               </tr>
             ))}

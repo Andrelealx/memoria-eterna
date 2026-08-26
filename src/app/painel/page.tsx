@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-auth";
 import { prisma } from "@/lib/db";
 import { buttonVariants } from "@/components/ui/button";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Painel" };
 
@@ -18,17 +19,8 @@ export default async function PainelPage() {
       <p className="mt-2 text-muted-foreground">{user.email}</p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-3xl border border-border bg-white p-6">
-          <p className="text-sm text-muted-foreground">Presentes</p>
-          <p className="mt-1 font-serif text-4xl">{gifts}</p>
-          <Link href="/painel/presentes" className="mt-3 inline-block text-sm text-primary underline">
-            Ver presentes
-          </Link>
-        </div>
-        <div className="rounded-3xl border border-border bg-white p-6">
-          <p className="text-sm text-muted-foreground">Pedidos</p>
-          <p className="mt-1 font-serif text-4xl">{orders}</p>
-        </div>
+        <StatCard label="Presentes" value={gifts} href="/painel/presentes" />
+        <StatCard label="Pedidos" value={orders} />
       </div>
 
       <div className="mt-8">
