@@ -12,7 +12,7 @@ export default async function ContaPage() {
     <div>
       <h1 className="font-serif text-3xl">Conta</h1>
 
-      <div className="mt-6 rounded-3xl border border-border bg-white p-6">
+      <div className="mt-6 rounded-3xl border border-border bg-card p-6">
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">E-mail</dt>
@@ -29,7 +29,7 @@ export default async function ContaPage() {
         </dl>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-border bg-white p-6">
+      <div className="mt-6 rounded-3xl border border-border bg-card p-6">
         <h2 className="font-serif text-xl">Privacidade e exclusão</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Para solicitar a remoção dos seus dados e conteúdo, entre em contato pelo e-mail de

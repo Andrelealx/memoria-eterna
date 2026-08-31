@@ -9,6 +9,7 @@ import {
 describe("state-machine", () => {
   it("permite transições válidas do projeto", () => {
     expect(canTransition("project", "DRAFT", "AWAITING_PAYMENT")).toBe(true);
+    expect(canTransition("project", "AWAITING_PAYMENT", "DRAFT")).toBe(true);
     expect(canTransition("project", "PROCESSING", "PUBLISHED")).toBe(true);
     expect(canTransition("project", "PUBLISHED", "EXPIRED")).toBe(true);
   });

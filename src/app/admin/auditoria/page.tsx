@@ -14,7 +14,7 @@ export default async function AdminAuditoriaPage() {
       ) : (
         <ul className="mt-6 space-y-2">
           {logs.map((l) => (
-            <li key={l.id} className="rounded-xl border border-border bg-white px-4 py-2 text-sm">
+            <li key={l.id} className="rounded-xl border border-border bg-card px-4 py-2 text-sm">
               <span className="font-medium">{l.action}</span>
               <span className="text-muted-foreground"> · {l.entity}</span>
               {l.entityId && <span className="text-muted-foreground"> · {l.entityId}</span>}

@@ -304,11 +304,11 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
   },
 ];
 
-/** Agrupa os templates por nicho, na ordem de `NICHES`. */
-export function templatesByNiche(): Record<Niche, TemplateDefinition[]> {
+/** Agrupa templates por nicho, na ordem de `NICHES`. */
+export function groupTemplatesByNiche(templates: TemplateDefinition[]): Record<Niche, TemplateDefinition[]> {
   const map = {} as Record<Niche, TemplateDefinition[]>;
   for (const n of NICHES) map[n] = [];
-  for (const t of DEFAULT_TEMPLATES) {
+  for (const t of templates) {
     map[t.niche].push(t);
   }
   return map;

@@ -27,6 +27,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    // Fotos aceitas pela interface têm até 15 MB; o multipart precisa de uma
+    // pequena margem além do tamanho do arquivo.
+    serverActions: { bodySizeLimit: "16mb" },
+  },
+  // Permite testar o servidor de desenvolvimento por Cloudflare Quick Tunnels.
+  // A opção só afeta os assets e endpoints internos usados pelo `next dev`.
+  allowedDevOrigins: ["*.trycloudflare.com"],
   async headers() {
     return [
       {

@@ -23,7 +23,7 @@ export default function AdminConfigPage() {
         Estas são configurações somente leitura (algumas virão de variáveis de ambiente).
       </p>
 
-      <dl className="mt-6 divide-y divide-border rounded-2xl border border-border bg-white px-5">
+      <dl className="mt-6 divide-y divide-border rounded-2xl border border-border bg-card px-5">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-center justify-between py-3 text-sm">
             <dt className="text-muted-foreground">{k}</dt>

@@ -20,7 +20,7 @@ export default async function PainelPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <StatCard label="Presentes" value={gifts} href="/painel/presentes" />
-        <StatCard label="Pedidos" value={orders} />
+        <StatCard label="Pedidos" value={orders} href="/painel/pedidos" />
       </div>
 
       <div className="mt-8">

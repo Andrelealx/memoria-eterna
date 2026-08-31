@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getPaymentProvider } from "@/lib/adapters/payment";
-import { processPaymentApproved } from "@/lib/server/orders";
+import { processPaymentApproved, processPaymentFailed } from "@/lib/server/orders";
 
 // Webhook do Mercado Pago (seções 14, 21). Valida assinatura e processa de forma
 // idempotente. Nunca confia no retorno visual do navegador.
@@ -31,11 +31,7 @@ export async function POST(req: Request): Promise<Response> {
   if (status === "APPROVED") {
     await processPaymentApproved(payment.id, event.providerEventId);
   } else if (status === "REJECTED" || status === "CANCELLED") {
-    await prisma.payment.update({ where: { id: payment.id }, data: { status } });
-    await prisma.order.update({
-      where: { id: payment.orderId },
-      data: { status: "CANCELLED" },
-    });
+    await processPaymentFailed(payment.id, status);
   }
 
   return new Response("OK", { status: 200 });

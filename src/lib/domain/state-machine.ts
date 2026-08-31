@@ -1,16 +1,11 @@
-import type {
-  NfcTagStatus,
-  PaymentStatus,
-  PhysicalOrderStatus,
-  ProjectStatus,
-} from "./enums";
+import type { NfcTagStatus, PaymentStatus, PhysicalOrderStatus, ProjectStatus } from "./enums";
 
 // Transições de estado permitidas (seção 21). O backend NÃO aceita qualquer
 // mudança arbitrária: toda transição deve constar no grafo abaixo.
 
 export const PROJECT_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   DRAFT: ["AWAITING_PAYMENT", "CANCELLED"],
-  AWAITING_PAYMENT: ["PROCESSING", "CANCELLED"],
+  AWAITING_PAYMENT: ["DRAFT", "PROCESSING", "CANCELLED"],
   PROCESSING: ["PUBLISHED", "CANCELLED"],
   PUBLISHED: ["EXPIRED", "ARCHIVED", "BLOCKED"],
   EXPIRED: ["PUBLISHED", "ARCHIVED"],

@@ -24,9 +24,9 @@ import {
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@presentevivo.local").toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@memoriaeternaprime.com.br").toLowerCase();
 const ADMIN_NAME = process.env.ADMIN_NAME ?? "Administrador (demo)";
-const DEMO_EMAIL = "demo@presentevivo.local";
+const DEMO_EMAIL = "demo@memoriaeternaprime.com.br";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

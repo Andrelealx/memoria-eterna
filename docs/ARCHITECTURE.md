@@ -55,4 +55,4 @@ flowchart LR
 ## Tema e marca
 
 Cores, fontes e dados jurídicos ficam em `src/lib/brand.ts` e `src/app/globals.css` (seção 7 da
-spec). O nome "Presente Vivo" é trabalho provisório e não foi aprovado para produção.
+spec). A marca atual é "Memória Eterna" (domínio `memoriaeternaprime.com.br`).

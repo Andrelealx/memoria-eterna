@@ -7,11 +7,13 @@ export function Photo({
   alt,
   className,
   aspect = "aspect-[3/4]",
+  priority = false,
 }: {
   src: string;
   alt: string;
   className?: string;
   aspect?: string;
+  priority?: boolean;
 }) {
   return (
     <div className={cn("overflow-hidden", aspect, className)}>
@@ -19,7 +21,8 @@ export function Photo({
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         className="h-full w-full object-cover"
         style={{ objectPosition: "center" }}
       />

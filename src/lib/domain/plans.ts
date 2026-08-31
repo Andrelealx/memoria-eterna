@@ -10,6 +10,9 @@ export const PLAN_SLUGS = {
   KIT_CORACAO_NFC: "kit-coracao-nfc",
 } as const;
 
+/** Teto operacional de segurança, mesmo que um plano seja configurado incorretamente. */
+export const ABSOLUTE_MAX_PROJECT_PHOTOS = 60;
+
 export const planLimitsSchema = z.object({
   maxPhotos: z.number().int().min(0),
   maxMoments: z.number().int().min(0),

@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-label="Sua foto aqui">
-  <rect width="600" height="800" fill="#FFF9F5"/>
-  <rect x="40" y="40" width="520" height="720" fill="none" stroke="#EADDE0" stroke-width="2" rx="24"/>
-  <path d="M300 300 m -60 0 a 60 60 0 1 1 120 0 a 60 60 0 1 1 -120 0" fill="none" stroke="#7A2438" stroke-width="2"/>
-  <path d="M270 330 L 300 360 L 340 310" fill="none" stroke="#C6A15B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="300" y="480" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#4B1625">Sua foto aqui</text>
-  <text x="300" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#6E6568">Placeholder de demonstração</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Imagem abstrata com formas botânicas">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F5E9D6"/><stop offset="1" stop-color="#C8D6B4"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#42503B" flood-opacity=".18"/></filter></defs>
+  <rect width="900" height="1200" fill="url(#bg)"/><circle cx="720" cy="190" r="210" fill="#FFF7E8" opacity=".72"/>
+  <path d="M70 1200 C20 900 80 660 300 490 C395 415 475 310 500 130 C580 350 540 590 390 760 C270 895 220 1040 250 1200Z" fill="#788B63" opacity=".92" filter="url(#shadow)"/>
+  <path d="M900 1200 C850 970 770 810 595 720 C455 647 400 530 415 390 C560 500 710 550 835 505 C785 680 805 865 900 1015Z" fill="#A96654" opacity=".82"/>
+  <g fill="none" stroke="#F7EDD9" stroke-width="10" stroke-linecap="round" opacity=".75"><path d="M230 1050 C220 820 310 650 450 480"/><path d="M274 814 L155 725"/><path d="M326 699 L408 590"/><path d="M730 1070 C715 900 650 790 545 690"/><path d="M691 909 L803 830"/><path d="M638 816 L548 790"/></g>
 </svg>

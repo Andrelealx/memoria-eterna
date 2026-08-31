@@ -36,9 +36,10 @@ const pronounsSchema = z.object({
 export const projectContentSchema = z.object({
   schemaVersion: z.number().int().positive().default(CURRENT_CONTENT_VERSION),
   niche: nicheSchema,
-  creatorName: z.string().min(1).max(120),
-  recipientName: z.string().min(1).max(120),
-  title: z.string().min(1).max(120),
+  // Rascunhos podem estar incompletos; a obrigatoriedade é validada no checkout.
+  creatorName: z.string().max(120).default(""),
+  recipientName: z.string().max(120).default(""),
+  title: z.string().max(120).default(""),
   relationshipDate: z.string().optional(), // ISO yyyy-mm-dd
   message: z.string().max(5000).default(""),
   pronouns: pronounsSchema.optional(),
@@ -51,6 +52,25 @@ export const projectContentSchema = z.object({
 });
 
 export type ProjectContent = z.infer<typeof projectContentSchema>;
+
+/** Conteúdo inicial válido para que um rascunho possa ser retomado imediatamente. */
+export function emptyProjectContent(niche: ProjectContent["niche"]): ProjectContent {
+  return {
+    schemaVersion: CURRENT_CONTENT_VERSION,
+    niche,
+    creatorName: "",
+    recipientName: "",
+    title: "",
+    relationshipDate: "",
+    message: "",
+    counterEnabled: niche === "romance",
+    photos: [],
+    moments: [],
+    music: null,
+    finalPhrase: "",
+    colorScheme: "vinho",
+  };
+}
 
 /** Valida e devolve o conteúdo normalizado. Lança em conteúdo inválido. */
 export function parseProjectContent(content: unknown): ProjectContent {

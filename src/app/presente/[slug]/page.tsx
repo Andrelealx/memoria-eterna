@@ -35,7 +35,7 @@ export default async function PublicGiftPage({
   }
 
   return (
-    <div className="min-h-screen bg-creme">
+    <div className="force-light min-h-screen bg-creme">
       <TemplateRenderer slug={data.templateSlug} content={data.content} photos={data.photos} />
 
       <footer className="border-t border-border bg-white">

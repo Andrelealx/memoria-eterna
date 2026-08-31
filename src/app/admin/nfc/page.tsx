@@ -31,7 +31,7 @@ export default async function AdminNfcPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map(({ tag, qr, allowed }) => (
-          <div key={tag.id} className="rounded-3xl border border-border bg-white p-5">
+          <div key={tag.id} className="rounded-3xl border border-border bg-card p-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-mono text-sm">{nfcUrl(tag.publicToken)}</p>

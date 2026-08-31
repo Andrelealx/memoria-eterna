@@ -8,7 +8,7 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
-  NEXT_PUBLIC_BRAND_NAME: z.string().default("Presente Vivo"),
+  NEXT_PUBLIC_BRAND_NAME: z.string().default("Memória Eterna"),
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().optional(),
@@ -19,9 +19,15 @@ const envSchema = z.object({
   MERCADO_PAGO_WEBHOOK_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_MODEL: z.string().default("deepseek-v4-flash"),
   CRON_SECRET: z.string().optional(),
   APP_ENCRYPTION_KEY: z.string().optional(),
   DEV_FAKE_PAYMENT_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  DEV_FAKE_AI_ENABLED: z
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),

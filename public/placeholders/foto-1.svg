@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-label="Sua foto aqui">
-  <rect width="600" height="800" fill="#F8E8EC"/>
-  <rect x="40" y="40" width="520" height="720" fill="none" stroke="#D99AAA" stroke-width="2" stroke-dasharray="10 8" rx="24"/>
-  <circle cx="300" cy="320" r="70" fill="none" stroke="#C6A15B" stroke-width="2"/>
-  <path d="M260 340 C 240 320 220 340 250 360 C 270 378 290 360 300 348" fill="none" stroke="#7A2438" stroke-width="3" stroke-linecap="round"/>
-  <text x="300" y="480" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#4B1625">Sua foto aqui</text>
-  <text x="300" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#6E6568">Placeholder de demonstração</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Imagem abstrata em tons de pôr do sol">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8C7CD"/><stop offset=".52" stop-color="#EAB39A"/><stop offset="1" stop-color="#714450"/></linearGradient>
+    <radialGradient id="sun"><stop offset="0" stop-color="#FFF5D6"/><stop offset="1" stop-color="#EFC47D"/></radialGradient>
+    <filter id="grain"><feTurbulence baseFrequency=".7" numOctaves="2" seed="4" type="fractalNoise"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .06 0"/></filter>
+  </defs>
+  <rect width="900" height="1200" fill="url(#sky)"/><circle cx="650" cy="340" r="170" fill="url(#sun)" opacity=".9"/>
+  <path d="M0 760 C150 690 260 730 390 790 C550 860 710 770 900 690 V1200 H0Z" fill="#5C3841" opacity=".78"/>
+  <path d="M0 875 C180 790 340 900 500 850 C690 790 780 820 900 770 V1200 H0Z" fill="#33272B" opacity=".88"/>
+  <g fill="#241C1F"><circle cx="415" cy="710" r="34"/><path d="M370 895 C373 790 377 746 415 742 C455 746 464 798 460 895Z"/><circle cx="495" cy="700" r="37"/><path d="M452 895 C456 785 460 739 498 737 C542 742 550 792 548 895Z"/></g>
+  <path d="M444 782 C463 760 478 755 499 776" fill="none" stroke="#241C1F" stroke-width="18" stroke-linecap="round"/><rect width="900" height="1200" filter="url(#grain)" opacity=".5"/>
 </svg>

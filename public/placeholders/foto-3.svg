@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-label="Sua foto aqui">
-  <rect width="600" height="800" fill="#FFFFFF"/>
-  <rect x="40" y="40" width="520" height="720" fill="none" stroke="#EADDE0" stroke-width="2" rx="24"/>
-  <path d="M300 340 l -40 -30 l -40 30 l 12 -48 l -36 -28 l 46 -2 l 18 -44 l 18 44 l 46 2 l -36 28 z" fill="none" stroke="#C6A15B" stroke-width="2"/>
-  <text x="300" y="480" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#4B1625">Sua foto aqui</text>
-  <text x="300" y="520" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" fill="#6E6568">Placeholder de demonstração</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Imagem abstrata de céu e montanhas">
+  <defs><linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#BBCFE5"/><stop offset=".48" stop-color="#F2D6CD"/><stop offset="1" stop-color="#E6C09C"/></linearGradient><linearGradient id="hill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#65736B"/><stop offset="1" stop-color="#35443E"/></linearGradient></defs>
+  <rect width="900" height="1200" fill="url(#dawn)"/><circle cx="265" cy="320" r="125" fill="#FFF5D8" opacity=".78"/>
+  <path d="M0 760 L205 530 L340 680 L520 390 L900 790 V1200 H0Z" fill="#7D8588" opacity=".54"/><path d="M0 910 C190 760 340 820 480 710 C630 590 770 700 900 610 V1200 H0Z" fill="url(#hill)"/><path d="M0 1020 C180 900 360 980 545 850 C700 745 820 815 900 780 V1200 H0Z" fill="#23322D"/>
+  <g fill="#F8F1E5" opacity=".82"><circle cx="645" cy="300" r="6"/><circle cx="690" cy="255" r="4"/><circle cx="735" cy="335" r="5"/></g>
 </svg>

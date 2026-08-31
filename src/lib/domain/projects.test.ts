@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contentWithinLimits, parseProjectContent } from "./projects";
+import { contentWithinLimits, emptyProjectContent, parseProjectContent } from "./projects";
 
 const base = {
   schemaVersion: 1,
@@ -27,5 +27,12 @@ describe("projects content", () => {
     const over = contentWithinLimits(content, { maxPhotos: 1, maxMoments: 0 });
     expect(over.ok).toBe(false);
     expect(over.errors[0]).toContain("fotos");
+  });
+
+  it("cria um rascunho incompleto que continua válido para autosave", () => {
+    const draft = emptyProjectContent("pet");
+    expect(draft.niche).toBe("pet");
+    expect(draft.creatorName).toBe("");
+    expect(() => parseProjectContent(draft)).not.toThrow();
   });
 });

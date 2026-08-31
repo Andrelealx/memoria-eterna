@@ -23,7 +23,7 @@ export default async function AdminPedidoPage({ params }: { params: Promise<{ id
       <h1 className="font-serif text-3xl">Pedido {order.orderNumber}</h1>
       <p className="mt-1 text-sm text-muted-foreground">Criado em {formatDate(order.createdAt)}</p>
 
-      <div className="mt-6 rounded-3xl border border-border bg-white p-6">
+      <div className="mt-6 rounded-3xl border border-border bg-card p-6">
         <h2 className="font-serif text-xl">Itens</h2>
         <ul className="mt-3 divide-y divide-border">
           {order.items.map((i) => (
@@ -39,7 +39,7 @@ export default async function AdminPedidoPage({ params }: { params: Promise<{ id
       </div>
 
       {physical && (
-        <div className="mt-4 rounded-3xl border border-border bg-white p-6">
+        <div className="mt-4 rounded-3xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-serif text-xl">Produção física</h2>

@@ -1,7 +1,4 @@
-"use client";
-
 import * as React from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Reveal ao rolar (padrão Magic UI / Origin UI). Usado para suavizar a entrada
@@ -23,15 +20,15 @@ export function BlurFade({
   duration = 0.5,
   blur = "8px",
 }: BlurFadeProps) {
+  const style = {
+    "--blur-fade-delay": `${delay}s`,
+    "--blur-fade-duration": `${duration}s`,
+    "--blur-fade-y": `${yOffset}px`,
+    "--blur-fade-blur": blur,
+  } as React.CSSProperties;
   return (
-    <motion.div
-      className={cn(className)}
-      initial={{ opacity: 0, y: yOffset, filter: `blur(${blur})` }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ delay, duration, ease: "easeOut" }}
-    >
+    <div className={cn("blur-fade", className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }

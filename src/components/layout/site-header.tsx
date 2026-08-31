@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -58,6 +59,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <ThemeToggle />
             <Link href="/entrar" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               Entrar
             </Link>
@@ -97,6 +99,10 @@ export function SiteHeader() {
                 </li>
               ))}
               <li className="mt-2 flex flex-col gap-2">
+                <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                  <span className="text-sm font-medium">Aparência</span>
+                  <ThemeToggle />
+                </div>
                 <Link
                   href="/entrar"
                   onClick={() => setOpen(false)}

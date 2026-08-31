@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { REPORT_STATUS_LABELS, formatDate, statusVariant } from "@/lib/labels";
+import { ReportActions } from "@/components/admin/report-actions";
 
 export const metadata = { title: "Denúncias" };
 
@@ -19,7 +20,7 @@ export default async function AdminDenunciasPage() {
       ) : (
         <ul className="mt-6 space-y-3">
           {reports.map((r) => (
-            <li key={r.id} className="rounded-2xl border border-border bg-white px-5 py-4">
+            <li key={r.id} className="rounded-2xl border border-border bg-card px-5 py-4">
               <div className="flex items-center justify-between">
                 <p className="font-medium">{r.reason}</p>
                 <Badge variant={statusVariant(r.status)}>{REPORT_STATUS_LABELS[r.status] ?? r.status}</Badge>
@@ -31,6 +32,11 @@ export default async function AdminDenunciasPage() {
                   ver página
                 </Link>
               </p>
+              {(r.status === "OPEN" || r.status === "REVIEWING") && (
+                <div className="mt-3">
+                  <ReportActions reportId={r.id} />
+                </div>
+              )}
             </li>
           ))}
         </ul>

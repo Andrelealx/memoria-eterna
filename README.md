@@ -1,4 +1,4 @@
-# Presente Vivo (nome de trabalho) — Plataforma de Presentes Digitais com NFC
+# Memória Eterna — Plataforma de Presentes Digitais com NFC
 
 MVP funcional de uma plataforma brasileira de presentes digitais personalizados. O cliente escolhe
 um tema, envia fotos, escreve textos, adiciona uma música permitida (Spotify/YouTube), visualiza a
@@ -47,7 +47,7 @@ npm run db:seed
 npm run dev
 ```
 
-Abra http://localhost:3000. O seed cria o admin `admin@presentevivo.local` (papel `ADMIN`).
+Abra http://localhost:3000. O seed cria o admin `admin@memoriaeternaprime.com.br` (papel `ADMIN`).
 
 ## Scripts
 
@@ -97,6 +97,5 @@ docs/             documentação (arquitetura, dados, pagamentos, NFC, seguranç
 
 - `DEV_FAKE_PAYMENT_ENABLED=true` habilita um provedor de pagamento **fake**, disponível **somente
   em desenvolvimento**. Em produção o provedor fake é bloqueado (ver `src/lib/adapters/payment/`).
-- O nome **"Presente Vivo"** é um nome de trabalho. Não foi aprovado para uso em produção (domínio,
-  redes sociais e marca registrada pendentes de pesquisa).
+- O nome **"Memória Eterna"** e o domínio **memoriaeternaprime.com.br** são a marca atual do projeto.
 - Dados do seed são **fictícios** e claramente identificados como demonstração.

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Ilustração de um pet em um campo">
+  <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#BFE4E2"/><stop offset=".58" stop-color="#F2E5B8"/><stop offset="1" stop-color="#C8A574"/></linearGradient></defs>
+  <rect width="900" height="1200" fill="url(#sky)"/><circle cx="690" cy="260" r="135" fill="#FFF6CF" opacity=".8"/>
+  <path d="M0 790 C210 700 390 850 575 730 C700 650 805 690 900 640 V1200 H0Z" fill="#6F8D68"/><path d="M0 930 C210 810 420 930 610 820 C740 745 830 780 900 750 V1200 H0Z" fill="#3F5B48"/>
+  <g fill="#26352F"><ellipse cx="455" cy="790" rx="125" ry="85"/><circle cx="565" cy="720" r="70"/><path d="M520 665 L505 570 L575 655Z"/><path d="M605 670 L665 600 L632 700Z"/><path d="M340 780 C245 720 250 635 292 620" fill="none" stroke="#26352F" stroke-width="34" stroke-linecap="round"/><rect x="385" y="830" width="38" height="150" rx="18"/><rect x="500" y="830" width="38" height="150" rx="18"/></g>
+  <circle cx="590" cy="716" r="8" fill="#F5E9D5"/>
+</svg>

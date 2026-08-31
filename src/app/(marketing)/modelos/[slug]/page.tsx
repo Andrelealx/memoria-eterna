@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DEFAULT_TEMPLATES } from "@/lib/domain/templates";
+import { getActiveTemplate } from "@/lib/server/templates";
 import type { Niche } from "@/lib/domain/enums";
 import { TemplateRenderer } from "@/components/templates";
 import type { ProjectContent } from "@/lib/domain/projects";
@@ -99,7 +99,7 @@ const DEMOS: Record<Niche, Demo> = {
   },
 };
 
-function demoContentFor(niche: Niche): ProjectContent {
+function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
   const demo = DEMOS[niche];
   return {
     schemaVersion: 1,
@@ -114,15 +114,22 @@ function demoContentFor(niche: Niche): ProjectContent {
     moments: demo.moments,
     music: null,
     finalPhrase: demo.finalPhrase ?? "",
-    colorScheme: "vinho",
+    colorScheme,
   };
 }
 
-const DEMO_PHOTOS: PublicPhoto[] = [
-  { assetId: "p1", url: "/placeholders/foto-1.svg", altText: "Foto de demonstração 1", position: 0, isCover: true },
-  { assetId: "p2", url: "/placeholders/foto-2.svg", altText: "Foto de demonstração 2", position: 1, isCover: false },
-  { assetId: "p3", url: "/placeholders/foto-3.svg", altText: "Foto de demonstração 3", position: 2, isCover: false },
-];
+function demoPhotosFor(niche: Niche): PublicPhoto[] {
+  const coverByNiche: Partial<Record<Niche, string>> = {
+    pet: "/placeholders/pet.svg",
+    bebe: "/placeholders/bebe.svg",
+    aniversario: "/placeholders/festa.svg",
+  };
+  return [
+    { assetId: "p1", url: coverByNiche[niche] ?? "/placeholders/foto-1.svg", altText: "Imagem de demonstração da capa", position: 0, isCover: true },
+    { assetId: "p2", url: "/placeholders/foto-2.svg", altText: "Imagem de demonstração botânica", position: 1, isCover: false },
+    { assetId: "p3", url: "/placeholders/foto-3.svg", altText: "Imagem de demonstração de paisagem", position: 2, isCover: false },
+  ];
+}
 
 export async function generateMetadata({
   params,
@@ -130,17 +137,21 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const t = DEFAULT_TEMPLATES.find((x) => x.slug === slug);
-  return { title: t?.name ?? "Modelo", robots: { index: false, follow: false } };
+  const t = await getActiveTemplate(slug);
+  return {
+    title: t?.name ?? "Modelo",
+    description: t?.description ?? "Veja uma demonstração deste modelo de presente.",
+    robots: { index: true, follow: true },
+  };
 }
 
 export default async function ModeloPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const template = DEFAULT_TEMPLATES.find((x) => x.slug === slug);
+  const template = await getActiveTemplate(slug);
   if (!template) notFound();
 
   return (
-    <div>
+    <div className="force-light min-h-screen bg-background">
       <div className="border-b border-border bg-white">
         <BlurFade>
           <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row">
@@ -148,7 +159,7 @@ export default async function ModeloPage({ params }: { params: Promise<{ slug: s
               <h1 className="font-serif text-3xl">{template.name}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
             </div>
-            <Link href={`/criar?template=${template.slug}`} className={buttonVariants({ variant: "shiny" })}>
+            <Link href={`/criar?template=${template.slug}`} data-analytics="template_select" data-analytics-label={template.slug} className={buttonVariants({ variant: "shiny" })}>
               Usar este modelo
             </Link>
           </div>
@@ -157,8 +168,8 @@ export default async function ModeloPage({ params }: { params: Promise<{ slug: s
 
       <TemplateRenderer
         slug={template.slug}
-        content={demoContentFor(template.niche)}
-        photos={DEMO_PHOTOS}
+        content={demoContentFor(template.niche, template.presets.defaultScheme)}
+        photos={demoPhotosFor(template.niche)}
       />
     </div>
   );

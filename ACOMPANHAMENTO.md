@@ -32,13 +32,12 @@ Arquivo de acompanhamento de tarefas. Status atualizado a cada fase concluída.
 
 ## Fase 2 — Jornada principal ✅
 
-- [x] Catálogo de templates (`/modelos`, `/modelos/[slug]`).
+- [x] Catálogo de templates (`/modelos`, `/modelos/[slug]`) — lido do banco (templates ativos).
 - [x] Assistente de criação com autosave (`/criar`, 6 etapas + `draft_token` retomável).
 - [x] Upload/otimização de fotos (sharp, detecção de MIME, remoção de EXIF, variantes WebP).
 - [x] Três templates públicos + página `/presente/[slug]` (noindex, compartilhar, denúncia).
 - [x] Resolução de mídia (placeholders/privado) + rota `/media/[...path]` (dev).
-
-> Pendência menor (não bloqueante): reordenar fotos com botões (mover para cima/baixo) no assistente.
+- [x] Reordenar fotos com botões (mover para cima/baixo) no assistente.
 
 ## Fase 3 — Receita ✅ (parcial: Mercado Pago aguarda credencial)
 
@@ -63,7 +62,7 @@ Arquivo de acompanhamento de tarefas. Status atualizado a cada fase concluída.
 - [x] Upgrade de plano (preserva link/conteúdo/NFC; dev com provedor fake).
 - [x] Cron de expiração (`/api/cron/expire`, `CRON_SECRET`) + lembrete do Plano Momento.
 - [x] Segurança: CSP compatível com embeds + rate limiting no redirect NFC.
-- [x] Testes E2E (Playwright, 4 fluxos críticos).
+- [x] Testes E2E (Playwright, 9 fluxos — inclui login admin, CRUD de cupom, edição de plano e arquivar template).
 - [ ] Deploy real (Vercel/Supabase) — **aguarda credenciais de produção**.
 
 > Hardening adicional (documentado, não bloqueante): CSP com nonces; rate limit distribuído (Upstash);
@@ -86,5 +85,4 @@ fake/local/log claramente identificados.
 
 1. Integração real (Mercado Pago sandbox, Supabase, Resend) quando houver credenciais.
 2. Deploy real (Vercel/Supabase) — aguarda credenciais de produção.
-3. Hardening opcional (não bloqueante): CSP com nonces; rate limit distribuído (Upstash);
-   reordenar fotos com botões no assistente.
+3. Hardening opcional (não bloqueante): CSP com nonces; rate limit distribuído (Upstash).

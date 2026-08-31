@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Check, Heart, Link2, QrCode, Smartphone, Sparkles } from "lucide-react";
 import { cn, formatBRL } from "@/lib/utils";
-import { DEFAULT_PLANS } from "@/lib/domain/plans";
+import type { PlanDefinition } from "@/lib/domain/plans";
 import { NICHE_LABELS } from "@/lib/domain/templates";
 import { NICHES } from "@/lib/domain/enums";
+import { listActivePlans } from "@/lib/server/plans";
+import { listActiveTemplates } from "@/lib/server/templates";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -17,23 +19,24 @@ import { NumberTicker } from "@/components/ui/number-ticker";
 // Landing page (seção 9). Layout em duas colunas no desktop, uma no mobile,
 // com animações discretas de entrada e ambiência (padrões Origin UI / Cult UI).
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [plans, templates] = await Promise.all([listActivePlans(), listActiveTemplates()]);
   return (
     <>
-      <Hero />
+      <Hero startingPrice={plans.length > 0 ? Math.min(...plans.map((plan) => plan.priceCents)) : null} />
       <MarqueeStrip />
       <HowItWorks />
-      <StatsStrip />
+      <StatsStrip templateCount={templates.length} />
       <TemplatesSection />
       <PhysicalSection />
-      <PricingSection />
+      <PricingSection plans={plans} />
       <PrivacySection />
       <FaqSection />
     </>
   );
 }
 
-function Hero() {
+function Hero({ startingPrice }: { startingPrice: number | null }) {
   return (
     <section className="relative overflow-hidden">
       <FloatingHearts count={16} className="opacity-70" />
@@ -59,17 +62,17 @@ function Hero() {
             </BlurFade>
             <BlurFade delay={0.24}>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
+                <Link href="/criar" data-analytics="cta_click" data-analytics-label="hero_criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
                   Criar meu presente
                 </Link>
-                <Link href="/como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+                <Link href="/#como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>
                   Ver como funciona
                 </Link>
               </div>
             </BlurFade>
             <BlurFade delay={0.3}>
               <p className="mt-5 text-sm text-muted-foreground">
-                A partir de R$ 19,90 · Pronto em poucos minutos
+                {startingPrice === null ? "Monte agora e escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`} · Pronto em poucos minutos
               </p>
             </BlurFade>
           </div>
@@ -107,7 +110,7 @@ function HeroVisual() {
 
 function FloatingTag({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm">
+    <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm">
       {label}
     </span>
   );
@@ -115,10 +118,10 @@ function FloatingTag({ label }: { label: string }) {
 
 function PhoneMockup() {
   return (
-    <div className="h-[460px] w-[230px] rounded-[2.5rem] border border-border bg-white p-3 shadow-sm">
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-[2rem] bg-creme">
+    <div className="h-[460px] w-[230px] rounded-[2.5rem] border border-border bg-card p-3 shadow-sm">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-[2rem] bg-background">
         <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-secondary to-background p-5 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full border border-border bg-white">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full border border-border bg-card">
             <Heart className="h-8 w-8 text-primary" />
           </div>
           <p className="font-serif text-xl text-foreground">Alex &amp; Dani</p>
@@ -156,8 +159,8 @@ const MARQUEE_ITEMS = [
   "Fotos",
   "Mensagens",
   "Linha do tempo",
-  "Música por embed",
-  "Slug personalizado",
+  "Música do Spotify ou YouTube",
+  "Link personalizado",
   "NFC no coração",
   "QR de contingência",
   "Privacidade",
@@ -165,7 +168,7 @@ const MARQUEE_ITEMS = [
 
 function MarqueeStrip() {
   return (
-    <section className="border-y border-border bg-white py-6">
+    <section className="border-y border-border bg-card py-6">
       <Marquee pauseOnHover>
         {MARQUEE_ITEMS.map((item) => (
           <span key={item} className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -185,7 +188,7 @@ function HowItWorks() {
     { n: "3", title: "Envie o link ou presenteie com NFC", text: "Compartilhe pelo WhatsApp ou aproxime o coração do celular." },
   ];
   return (
-    <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-white">
+    <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <BlurFade>
           <h2 className="text-center font-serif text-3xl md:text-4xl">Como funciona</h2>
@@ -208,9 +211,9 @@ function HowItWorks() {
   );
 }
 
-function StatsStrip() {
+function StatsStrip({ templateCount }: { templateCount: number }) {
   const stats = [
-    { value: 9, label: "modelos" },
+    { value: templateCount, label: "modelos" },
     { value: 7, label: "nichos para presentear" },
     { value: 30, label: "fotos no Para Sempre" },
     { value: 12, label: "momentos na linha do tempo" },
@@ -254,8 +257,8 @@ function TemplatesSection() {
         {NICHES.map((niche, i) => (
           <BlurFade key={niche} delay={i * 0.06}>
             <Link
-              href="/modelos"
-              className="group block h-full rounded-3xl border border-border bg-white p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              href={`/modelos?nicho=${niche}`}
+              className="group block h-full rounded-3xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
             >
               <p className="font-serif text-xl">{NICHE_LABELS[niche]}</p>
               <p className="mt-2 text-sm text-muted-foreground">{NICHE_DESCRIPTIONS[niche]}</p>
@@ -305,8 +308,7 @@ function PhysicalSection() {
   );
 }
 
-function PricingSection() {
-  const plans = DEFAULT_PLANS;
+function PricingSection({ plans }: { plans: PlanDefinition[] }) {
   return (
     <section id="precos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
       <BlurFade>
@@ -327,7 +329,7 @@ function PricingSection() {
                 <span className="font-serif text-3xl">{formatBRL(p.priceCents)}</span>
               </p>
               <ul className="mt-6 flex-1 space-y-3 text-sm">
-                {planFeatures(p.slug).map((f) => (
+                {planFeatures(p).map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     <span>{f}</span>
@@ -336,6 +338,8 @@ function PricingSection() {
               </ul>
               <Link
                 href="/criar"
+                data-analytics="cta_click"
+                data-analytics-label={`plano_${p.slug}`}
                 className={buttonVariants({
                   variant: featured ? "shiny" : "secondary",
                   className: "mt-8 w-full",
@@ -353,7 +357,7 @@ function PricingSection() {
                   {inner}
                 </ShineBorder>
               ) : (
-                <div className={cn("flex h-full flex-col rounded-3xl border border-border bg-white")}>{inner}</div>
+                <div className={cn("flex h-full flex-col rounded-3xl border border-border bg-card")}>{inner}</div>
               )}
             </BlurFade>
           );
@@ -363,12 +367,25 @@ function PricingSection() {
   );
 }
 
-function planFeatures(slug: string): string[] {
-  switch (slug) {
+function planFeatures(plan: PlanDefinition): string[] {
+  switch (plan.slug) {
     case "momento":
-      return ["7 dias no ar", "Até 5 fotos", "1 template à sua escolha", "Nomes, mensagem e contador", "Link e WhatsApp"];
+      return [
+        `${plan.durationDays ?? 7} dias no ar`,
+        `Até ${plan.limits.maxPhotos} fotos`,
+        "1 modelo à sua escolha",
+        "Nomes, mensagem e contador",
+        "Link pronto para compartilhar",
+      ];
     case "para-sempre":
-      return ["Sem data de expiração", "Até 30 fotos", "Linha do tempo com 12 momentos", "Música por embed", "Slug personalizado", "Edição posterior"];
+      return [
+        "Sem data de expiração",
+        `Até ${plan.limits.maxPhotos} fotos`,
+        `Linha do tempo com ${plan.limits.maxMoments} momentos`,
+        "Música do Spotify ou YouTube",
+        "Link personalizado",
+        "Edição posterior",
+      ];
     case "kit-coracao-nfc":
       return ["Tudo do Para Sempre", "Chaveiro coração com NFC", "Cartão com QR de contingência", "Embalagem protegida", "Acompanhamento do pedido"];
     default:
@@ -378,7 +395,7 @@ function planFeatures(slug: string): string[] {
 
 function PrivacySection() {
   return (
-    <section className="border-y border-border bg-white">
+    <section className="border-y border-border bg-card">
       <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
         <BlurFade>
           <h2 className="font-serif text-2xl md:text-3xl">Segurança e privacidade</h2>
@@ -410,7 +427,7 @@ function FaqSection() {
       <div className="mt-10 space-y-3">
         {faqs.map((f, i) => (
           <BlurFade key={f.q} delay={i * 0.05}>
-            <details className="group rounded-2xl border border-border bg-white p-5">
+            <details className="group rounded-2xl border border-border bg-card p-5">
               <summary className="cursor-pointer list-none font-medium text-foreground">
                 {f.q}
               </summary>

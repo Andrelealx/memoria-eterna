@@ -1,18 +1,16 @@
-// Configuração central da marca (seção 3.79 do PROMPT MESTRE).
-// Nome, domínio, cores e dados jurídicos ficam centralizados para permitir
-// troca futura sem refatoração. "Presente Vivo" é apenas nome de trabalho.
+// Configuração central da marca. Nome, domínio, cores e dados jurídicos ficam
+// centralizados para permitir troca futura sem refatoração.
 
 export const brand = {
-  /** Nome de trabalho. Substituir após pesquisa de domínio/marca. */
-  name: process.env.NEXT_PUBLIC_BRAND_NAME ?? "Presente Vivo",
-  domain: process.env.NEXT_PUBLIC_BRAND_DOMAIN ?? "localhost:3000",
+  name: process.env.NEXT_PUBLIC_BRAND_NAME ?? "Memória Eterna",
+  domain: process.env.NEXT_PUBLIC_BRAND_DOMAIN ?? "memoriaeternaprime.com.br",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 
   // Dados jurídicos — NÃO preencher valores fictícios (CNPJ/telefone).
   legal: {
     companyName: undefined as string | undefined,
     cnpj: undefined as string | undefined,
-    email: process.env.EMAIL_FROM ?? undefined,
+    email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? undefined,
   },
 
   tagline: "Suas memórias em um presente que pode ser tocado.",

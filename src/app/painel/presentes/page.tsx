@@ -38,7 +38,7 @@ export default async function PresentesPage() {
             <li key={p.id}>
               <Link
                 href={`/painel/presentes/${p.id}`}
-                className="block rounded-3xl border border-border bg-white p-5 transition-colors hover:border-primary"
+                className="block rounded-3xl border border-border bg-card p-5 transition-colors hover:border-primary"
               >
                 <div className="flex items-center justify-between">
                   <Badge variant={statusVariant(p.status)}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>

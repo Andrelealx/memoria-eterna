@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Entrar" };
 
 export default function EntrarPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-creme px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <Logo />
       <h1 className="mt-8 font-serif text-3xl">Acessar minha conta</h1>
       <p className="mt-2 mb-6 text-sm text-muted-foreground">

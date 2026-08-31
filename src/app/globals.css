@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Tema da marca (seção 7 do PROMPT MESTRE). Paleta afetiva e premium.
  * Contraste WCAG AA. O dourado é decorativo (nunca a única cor de texto pequeno).
@@ -27,6 +29,57 @@
 
   --ring: #d99aaa; /* rosa queimado */
 
+  --success: #247a52;
+  --error: #b42318;
+}
+
+/* Tema escuro (toggle via classe `.dark` no <html>). */
+.dark {
+  --background: #171214;
+  --foreground: #f1e9ec;
+
+  --card: #221a1d;
+  --card-foreground: #f1e9ec;
+
+  --primary: #c4697f;
+  --primary-foreground: #171214;
+  --primary-dark: #a34d63;
+
+  --secondary: #342428;
+  --secondary-foreground: #f1e9ec;
+
+  --accent: #d3b274;
+
+  --muted: #b0a0a5;
+  --muted-foreground: #b0a0a5;
+
+  --border: #3a2b30;
+
+  --ring: #d99aaa;
+
+  --success: #3fae7f;
+  --error: #e5534b;
+}
+
+/* Páginas de presente públicas permanecem claras mesmo com dark mode ativo. */
+.force-light {
+  color-scheme: light;
+  background-color: var(--background);
+  color: var(--foreground);
+  --background: #fff9f5;
+  --foreground: #231f20;
+  --card: #ffffff;
+  --card-foreground: #231f20;
+  --primary: #7a2438;
+  --primary-foreground: #ffffff;
+  --primary-dark: #4b1625;
+  --secondary: #f8e8ec;
+  --secondary-foreground: #4b1625;
+  --accent: #c6a15b;
+  --muted: #6e6568;
+  --muted-foreground: #6e6568;
+  --border: #eadde0;
+  --ring: #d99aaa;
   --success: #247a52;
   --error: #b42318;
 }
@@ -93,6 +146,50 @@
   50% {
     background-position: 100% 50%;
   }
+}
+
+@keyframes blur-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--blur-fade-y, 16px));
+    filter: blur(var(--blur-fade-blur, 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes experience-zoom {
+  from { transform: scale(1.04); }
+  to { transform: scale(1); }
+}
+
+@keyframes experience-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(18px, -24px, 0) scale(1.08); }
+}
+
+.experience-root {
+  color-scheme: light;
+}
+
+.experience-orb {
+  position: absolute;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  background: var(--exp-soft);
+  filter: blur(70px);
+  opacity: 0.42;
+  pointer-events: none;
+  animation: experience-drift 12s ease-in-out infinite;
+}
+
+.blur-fade {
+  animation: blur-fade-in var(--blur-fade-duration, 0.5s) ease-out both;
+  animation-delay: var(--blur-fade-delay, 0s);
 }
 
 @layer base {

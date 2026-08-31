@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/db";
-import { Badge } from "@/components/ui/badge";
-import { ROLE_LABELS, formatDate, roleVariant } from "@/lib/labels";
+import { getCurrentUser } from "@/lib/auth/session";
+import { formatDate } from "@/lib/labels";
+import { UserRole } from "@/components/admin/user-role";
 
 export const metadata = { title: "Clientes" };
 
 export default async function AdminClientesPage() {
-  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  const [currentUser, users] = await Promise.all([
+    getCurrentUser(),
+    prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
+  ]);
 
   return (
     <div>
@@ -26,7 +30,7 @@ export default async function AdminClientesPage() {
                 <td className="py-2 pr-4">{u.email}</td>
                 <td className="py-2 pr-4">{u.name ?? "—"}</td>
                 <td className="py-2 pr-4">
-                  <Badge variant={roleVariant(u.role)}>{ROLE_LABELS[u.role] ?? u.role}</Badge>
+                  <UserRole userId={u.id} currentRole={u.role} isSelf={u.id === currentUser?.id} />
                 </td>
                 <td className="py-2 pr-4">{formatDate(u.createdAt)}</td>
               </tr>

@@ -53,7 +53,7 @@ export default async function AdminDashboard() {
       ) : (
         <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {physicalByStatus.map((p) => (
-            <li key={p.status} className="flex justify-between rounded-xl border border-border bg-white px-4 py-2 text-sm">
+            <li key={p.status} className="flex justify-between rounded-xl border border-border bg-card px-4 py-2 text-sm">
               <span>{p.status}</span>
               <span className="font-medium">{p._count}</span>
             </li>
