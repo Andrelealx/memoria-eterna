@@ -123,6 +123,7 @@ function demoPhotosFor(niche: Niche): PublicPhoto[] {
     pet: "/placeholders/pet.svg",
     bebe: "/placeholders/bebe.svg",
     aniversario: "/placeholders/festa.svg",
+    romance: "/demo/romance-cover.jpg",
   };
   return [
     { assetId: "p1", url: coverByNiche[niche] ?? "/placeholders/foto-1.svg", altText: "Imagem de demonstração da capa", position: 0, isCover: true },
