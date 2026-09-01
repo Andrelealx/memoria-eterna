@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 const LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/pedidos", label: "Pedidos" },
+  { href: "/admin/falhas", label: "Falhas" },
   { href: "/admin/nfc", label: "NFC" },
   { href: "/admin/planos", label: "Planos" },
   { href: "/admin/templates", label: "Templates" },

@@ -11,18 +11,34 @@ function sinceDays(days: number): Date {
 }
 
 export default async function AdminDashboard() {
-  const [ordersToday, orders7d, orders30d, approvedAgg, physicalByStatus, tagsToWrite, tagsToTest, reportsOpen, projectsProcessing] =
-    await Promise.all([
-      prisma.order.count({ where: { createdAt: { gte: sinceDays(1) } } }),
-      prisma.order.count({ where: { createdAt: { gte: sinceDays(7) } } }),
-      prisma.order.count({ where: { createdAt: { gte: sinceDays(30) } } }),
-      prisma.payment.aggregate({ where: { status: "APPROVED" }, _sum: { amount: true } }),
-      prisma.physicalOrder.groupBy({ by: ["status"], _count: true }),
-      prisma.nfcTag.count({ where: { status: "GENERATED" } }),
-      prisma.nfcTag.count({ where: { status: "WRITTEN" } }),
-      prisma.abuseReport.count({ where: { status: "OPEN" } }),
-      prisma.project.count({ where: { status: "PROCESSING" } }),
-    ]);
+  const [
+    ordersToday,
+    orders7d,
+    orders30d,
+    approvedAgg,
+    physicalByStatus,
+    tagsToWrite,
+    tagsToTest,
+    reportsOpen,
+    projectsProcessing,
+    paymentFailures7d,
+  ] = await Promise.all([
+    prisma.order.count({ where: { createdAt: { gte: sinceDays(1) } } }),
+    prisma.order.count({ where: { createdAt: { gte: sinceDays(7) } } }),
+    prisma.order.count({ where: { createdAt: { gte: sinceDays(30) } } }),
+    prisma.payment.aggregate({ where: { status: "APPROVED" }, _sum: { amount: true } }),
+    prisma.physicalOrder.groupBy({ by: ["status"], _count: true }),
+    prisma.nfcTag.count({ where: { status: "GENERATED" } }),
+    prisma.nfcTag.count({ where: { status: "WRITTEN" } }),
+    prisma.abuseReport.count({ where: { status: "OPEN" } }),
+    prisma.project.count({ where: { status: "PROCESSING" } }),
+    prisma.payment.count({
+      where: {
+        status: { in: ["REJECTED", "CANCELLED", "REFUNDED", "CHARGEDBACK"] },
+        updatedAt: { gte: sinceDays(7) },
+      },
+    }),
+  ]);
 
   const revenue = approvedAgg._sum.amount ?? 0;
   const paidOrders = await prisma.order.count({ where: { status: "PAID" } });
@@ -37,6 +53,7 @@ export default async function AdminDashboard() {
     { label: "Tags a gravar", value: String(tagsToWrite), href: "/admin/nfc" },
     { label: "Tags a testar", value: String(tagsToTest), href: "/admin/nfc" },
     { label: "Denúncias pendentes", value: String(reportsOpen), href: "/admin/denuncias" },
+    { label: "Falhas de pagamento (7d)", value: String(paymentFailures7d), href: "/admin/falhas" },
   ];
 
   return (
