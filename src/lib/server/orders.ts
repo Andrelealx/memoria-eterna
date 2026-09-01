@@ -11,7 +11,7 @@ import {
   hashToken,
 } from "@/lib/domain/tokens";
 import { contentWithinLimits, parseProjectContent } from "@/lib/domain/projects";
-import { planLimitsFor } from "@/lib/domain/plans";
+import { isProjectStatusEditable, planLimitsFor } from "@/lib/domain/plans";
 import { suggestUniqueSlug } from "@/lib/domain/slug";
 import { getPaymentProvider } from "@/lib/adapters/payment";
 import { getEmailProvider } from "@/lib/adapters/email/factory";
@@ -583,19 +583,25 @@ export async function processPaymentApproved(
     try {
       const paid = await prisma.payment.findUnique({
         where: { id: paymentId },
-        include: { order: { include: { project: true } } },
+        include: { order: { include: { project: { include: { plan: true } } } } },
       });
       const customerId = paid?.order.customerId;
       const to = paid?.order.checkoutEmail;
       if (!customerId || !to) throw new Error("Pagamento sem cliente vinculado.");
       const rawToken = await createMagicLink(customerId);
       const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const project = paid.order.project;
+      // Leva direto para a tela do presente (com o botão Editar quando o
+      // plano permite), em vez de largar a pessoa no painel genérico.
+      const next = project ? `/painel/presentes/${project.id}` : "/painel";
+      const editable = project ? isProjectStatusEditable("PUBLISHED", project.plan?.limits) : false;
       const emailData: Record<string, string> = {
         orderNumber: paid.order.orderNumber,
-        accessUrl: `${base}/entrar/${rawToken}`,
+        accessUrl: `${base}/entrar/${rawToken}?next=${encodeURIComponent(next)}`,
+        accessLabel: editable ? "Acessar e editar" : "Acessar meu presente",
       };
-      if (paid.order.project?.slug) {
-        emailData.giftUrl = `${base}/presente/${paid.order.project.slug}`;
+      if (project?.slug) {
+        emailData.giftUrl = `${base}/presente/${project.slug}`;
       }
       await getEmailProvider().send({
         to,

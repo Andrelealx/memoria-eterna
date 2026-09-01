@@ -6,7 +6,15 @@ import { prisma } from "@/lib/db";
 
 // Consome o magic link e define o cookie de sessão (Route Handler, pois cookies
 // só podem ser modificados em Server Action ou Route Handler). Staff cai direto
-// no admin; clientes, no painel.
+// no admin; clientes, no painel (ou em `next`, quando o link aponta para um
+// destino específico — ex.: o presente que acabou de ser pago).
+
+/** Só aceita caminhos internos (`/algo`), nunca URLs absolutas ou `//host` (open redirect). */
+function safeNextPath(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
 
 export async function GET(
   req: Request,
@@ -20,7 +28,8 @@ export async function GET(
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  const destination = isStaff(user) ? "/admin" : "/painel";
+  const next = safeNextPath(new URL(req.url).searchParams.get("next"));
+  const destination = isStaff(user) ? "/admin" : (next ?? "/painel");
 
   const res = NextResponse.redirect(new URL(destination, req.url));
   res.cookies.set(SESSION_COOKIE, signSessionToken(userId), sessionCookieOptions());

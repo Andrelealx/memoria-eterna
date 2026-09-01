@@ -63,7 +63,7 @@ function renderEmail(message: EmailMessage) {
       : "";
     content = `
       <p>Seu pagamento do pedido <strong>${escapeHtml(message.data.orderNumber ?? "")}</strong> foi aprovado e seu presente já está disponível.</p>
-      <p>${giftAction}${action(message.data.accessUrl, "Acessar e editar")}</p>
+      <p>${giftAction}${action(message.data.accessUrl, message.data.accessLabel || "Acessar meu presente")}</p>
       <p style="font-size:13px;color:#6E6568">Guarde este e-mail. O botão de acesso é pessoal e não deve ser compartilhado.</p>`;
   } else if (message.template === "about-to-expire") {
     content = `<p>Seu presente ${escapeHtml(message.data.title ?? "")} está perto de expirar. Entre na sua conta para conferir as opções disponíveis.</p>`;

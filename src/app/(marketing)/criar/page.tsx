@@ -15,9 +15,9 @@ export const maxDuration = 60;
 export default async function CriarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string }>;
+  searchParams: Promise<{ template?: string; editar?: string }>;
 }) {
-  const [{ template }, templates, plans] = await Promise.all([
+  const [{ template, editar }, templates, plans] = await Promise.all([
     searchParams,
     listActiveTemplates(),
     listActivePlans(),
@@ -32,6 +32,7 @@ export default async function CriarPage({
       plans={plans}
       initialTemplateSlug={template}
       aiEnabled={aiEnabled}
+      editDraftToken={editar}
     />
   );
 }

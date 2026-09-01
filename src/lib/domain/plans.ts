@@ -93,3 +93,14 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
 export function planLimitsFor(limits: unknown): PlanLimits {
   return planLimitsSchema.parse(limits ?? {});
 }
+
+/**
+ * Um projeto pode ser editado enquanto é rascunho (pré-compra) ou, depois de
+ * publicado, apenas se o plano contratado permitir (Para Sempre, Kit Coração
+ * NFC — não o Momento). Ver seção "Posso editar depois?" do FAQ.
+ */
+export function isProjectStatusEditable(status: string, planLimits: unknown): boolean {
+  if (status === "DRAFT") return true;
+  if (status === "PUBLISHED") return planLimitsFor(planLimits).editAfterPublish;
+  return false;
+}

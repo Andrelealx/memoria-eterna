@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { ShareButton } from "@/components/templates/share-button";
 import { UpgradeButton } from "@/components/upgrade-button";
+import { EditProjectButton } from "@/components/edit-project-button";
 import { PROJECT_STATUS_LABELS, formatDate } from "@/lib/labels";
+import { isProjectStatusEditable } from "@/lib/domain/plans";
 
 export const metadata = { title: "Presente" };
 
@@ -28,6 +30,7 @@ export default async function PresentePage({ params }: { params: Promise<{ id: s
     return (variants?.preview ?? variants?.thumbnail) != null;
   });
   const coverUrl = cover ? await publicMediaUrl(preferredVariantKey(cover)) : null;
+  const editable = isProjectStatusEditable(project.status, project.plan?.limits);
 
   return (
     <div>
@@ -57,6 +60,7 @@ export default async function PresentePage({ params }: { params: Promise<{ id: s
             Ver página
           </Link>
         )}
+        {project.status === "PUBLISHED" && editable && <EditProjectButton projectId={project.id} />}
         {project.status === "DRAFT" && (
           <span className="rounded-2xl bg-secondary px-4 py-2 text-sm text-muted-foreground">
             Rascunho ainda não comprado.

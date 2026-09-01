@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import type { MediaStorageAdapter } from "@/lib/adapters/storage";
 import { getStorageAdapter } from "@/lib/adapters/storage/factory";
 import { parseProjectContent } from "@/lib/domain/projects";
-import { ABSOLUTE_MAX_PROJECT_PHOTOS, planLimitsSchema } from "@/lib/domain/plans";
+import { ABSOLUTE_MAX_PROJECT_PHOTOS, isProjectStatusEditable, planLimitsSchema } from "@/lib/domain/plans";
 import { ALLOWED_IMAGE_MIME, detectImageMime, processImage } from "@/lib/media/image";
 import { preferredVariantKey, publicMediaUrl } from "@/lib/server/media";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -98,10 +98,10 @@ export async function preparePhotoUpload(input: {
   if (!storage.createSignedUploadUrl) return { mode: "server" };
 
   const [project, activePlans] = await Promise.all([
-    prisma.project.findUnique({ where: { draftToken: input.draftToken } }),
+    prisma.project.findUnique({ where: { draftToken: input.draftToken }, include: { plan: true } }),
     prisma.plan.findMany({ where: { active: true }, select: { limits: true } }),
   ]);
-  if (!project || project.status !== "DRAFT") {
+  if (!project || !isProjectStatusEditable(project.status, project.plan?.limits)) {
     throw new Error("[upload] Rascunho não encontrado.");
   }
   await storage.ensureUploadBucket?.();
@@ -194,9 +194,9 @@ export async function finalizePhotoUpload(input: {
 
   let asset = await prisma.mediaAsset.findFirst({
     where: { id: input.assetId, project: { draftToken: input.draftToken } },
-    include: { project: true },
+    include: { project: { include: { plan: true } } },
   });
-  if (!asset || asset.project.status !== "DRAFT") {
+  if (!asset || !isProjectStatusEditable(asset.project.status, asset.project.plan?.limits)) {
     throw new Error("[upload] Reserva de foto não encontrada.");
   }
 
@@ -224,7 +224,7 @@ export async function finalizePhotoUpload(input: {
   if (claimed.count !== 1) {
     asset = await prisma.mediaAsset.findFirst({
       where: { id: input.assetId, project: { draftToken: input.draftToken } },
-      include: { project: true },
+      include: { project: { include: { plan: true } } },
     });
     if (asset?.status === "READY") return readyPhotoResult(asset);
     throw new Error("[upload] Esta foto ainda está sendo processada. Tente novamente.");
@@ -263,10 +263,10 @@ export async function finalizePhotoUpload(input: {
     const maxPhotos = configuredMaxPhotos(activePlans);
     await prisma.$transaction(async (tx) => {
       const [latestProject, latestAsset] = await Promise.all([
-        tx.project.findUnique({ where: { id: asset!.projectId } }),
+        tx.project.findUnique({ where: { id: asset!.projectId }, include: { plan: true } }),
         tx.mediaAsset.findUnique({ where: { id: asset!.id } }),
       ]);
-      if (!latestProject || latestProject.status !== "DRAFT") {
+      if (!latestProject || !isProjectStatusEditable(latestProject.status, latestProject.plan?.limits)) {
         throw new Error("[upload] Rascunho não encontrado.");
       }
       if (!latestAsset || latestAsset.status !== "PROCESSING") {
@@ -353,10 +353,10 @@ export async function uploadPhoto(formData: FormData): Promise<UploadPhotoResult
   }
 
   const [project, activePlans] = await Promise.all([
-    prisma.project.findUnique({ where: { draftToken } }),
+    prisma.project.findUnique({ where: { draftToken }, include: { plan: true } }),
     prisma.plan.findMany({ where: { active: true }, select: { limits: true } }),
   ]);
-  if (!project || project.status !== "DRAFT") {
+  if (!project || !isProjectStatusEditable(project.status, project.plan?.limits)) {
     throw new Error("[upload] Rascunho não encontrado.");
   }
 
@@ -401,8 +401,11 @@ export async function uploadPhoto(formData: FormData): Promise<UploadPhotoResult
     // A referência entra no rascunho no mesmo commit que registra o asset. Assim,
     // fechar a aba durante um lote não faz uma foto já concluída desaparecer.
     const asset = await prisma.$transaction(async (tx) => {
-      const latestProject = await tx.project.findUnique({ where: { id: project.id } });
-      if (!latestProject || latestProject.status !== "DRAFT") {
+      const latestProject = await tx.project.findUnique({
+        where: { id: project.id },
+        include: { plan: true },
+      });
+      if (!latestProject || !isProjectStatusEditable(latestProject.status, latestProject.plan?.limits)) {
         throw new Error("[upload] Rascunho não encontrado.");
       }
       const latestContent = parseProjectContent(latestProject.content);

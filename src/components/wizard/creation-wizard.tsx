@@ -235,6 +235,8 @@ interface CreationWizardProps {
   plans: PlanDefinition[];
   initialTemplateSlug?: string;
   aiEnabled: boolean;
+  /** Presente-token de um presente já publicado, reaberto para edição. */
+  editDraftToken?: string;
 }
 
 export function CreationWizard({
@@ -242,6 +244,7 @@ export function CreationWizard({
   plans,
   initialTemplateSlug,
   aiEnabled,
+  editDraftToken,
 }: CreationWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -272,6 +275,10 @@ export function CreationWizard({
   const [resumeLoadFailed, setResumeLoadFailed] = useState(false);
   const [resumeAttempt, setResumeAttempt] = useState(0);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // Edição pós-compra: reabre um presente publicado (Para Sempre / Kit NFC).
+  // Pula plano/pagamento no passo final — salva direto, sem nova cobrança.
+  const [editMode, setEditMode] = useState(false);
+  const [editProjectSlug, setEditProjectSlug] = useState<string | null>(null);
   const saveRequest = useRef(0);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const checkoutToken = useRef<string | null>(null);
@@ -352,8 +359,51 @@ export function CreationWizard({
     }
   }, []);
 
-  // Retoma os rascunhos recentes deste dispositivo sem perder referências anteriores.
+  // Edição pós-compra: carrega direto pelo token vindo da URL, sem passar
+  // pela lista de rascunhos deste dispositivo (o presente pode ter sido
+  // aberto em outro aparelho, via link do e-mail/painel).
   useEffect(() => {
+    if (!editDraftToken) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const draft = await loadDraft(editDraftToken);
+        if (cancelled) return;
+        if (!draft) {
+          setError("Não foi possível carregar este presente para edição.");
+          return;
+        }
+        setDraftToken(editDraftToken);
+        setTemplateSlug(draft.templateSlug);
+        setContent(draft.content);
+        setPhotos(
+          draft.photos.map((photo) => ({
+            assetId: photo.assetId,
+            url: photo.url,
+            altText: photo.altText,
+            position: photo.position,
+            isCover: photo.isCover,
+          })),
+        );
+        setEditMode(draft.projectStatus === "PUBLISHED");
+        setEditProjectSlug(draft.slug);
+        setResumed(true);
+        setStep(1);
+      } catch {
+        if (!cancelled) setError("Não foi possível carregar este presente para edição.");
+      } finally {
+        if (!cancelled) setResuming(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editDraftToken]);
+
+  // Retoma os rascunhos recentes deste dispositivo sem perder referências anteriores.
+  // Em modo de edição (token vindo da URL), o efeito acima já cuida de tudo.
+  useEffect(() => {
+    if (editDraftToken) return;
     let cancelled = false;
     async function resume() {
       const memories = listDraftMemories(localStorage);
@@ -408,7 +458,7 @@ export function CreationWizard({
     return () => {
       cancelled = true;
     };
-  }, [initialTemplateSlug, resumeAttempt]);
+  }, [initialTemplateSlug, resumeAttempt, editDraftToken]);
 
   useEffect(() => {
     if (!previewExpanded) return;
@@ -1008,6 +1058,24 @@ export function CreationWizard({
     }
   }
 
+  /** Edição pós-compra: salva o conteúdo já publicado, sem gerar nova cobrança. */
+  async function handleSaveEdits() {
+    if (!draftToken) return;
+    setBusy(true);
+    setError(null);
+    setCheckoutError(null);
+    try {
+      const saved = await persist();
+      if (!saved) return;
+      router.push(editProjectSlug ? `/presente/${editProjectSlug}` : "/painel/presentes");
+    } catch (e) {
+      setCheckoutError(friendlyError(e, "Falha ao salvar as alterações."));
+      checkoutActionErrorFocus();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function calculateShipping() {
     const request = ++shippingRequest.current;
     setQuotingShipping(true);
@@ -1442,15 +1510,19 @@ export function CreationWizard({
   }
 
   const currentStepLabel =
-    step === 0 && aiEnabled
-      ? "Vamos criar algo inesquecível"
-      : step === 3
-        ? (STORY_LABELS[template.niche] ?? STEPS[step])
-        : STEPS[step];
+    step === 5 && editMode
+      ? "Revisar e salvar"
+      : step === 0 && aiEnabled
+        ? "Vamos criar algo inesquecível"
+        : step === 3
+          ? (STORY_LABELS[template.niche] ?? STEPS[step])
+          : STEPS[step];
   const currentStepDescription =
-    step === 0 && aiEnabled
-      ? "Conte sua história para a IA ou escolha cada detalhe manualmente."
-      : STEP_DESCRIPTIONS[step];
+    step === 5 && editMode
+      ? "Edite o que quiser e salve — seu presente já está pago e publicado."
+      : step === 0 && aiEnabled
+        ? "Conte sua história para a IA ou escolha cada detalhe manualmente."
+        : STEP_DESCRIPTIONS[step];
 
   return (
     <div
@@ -2185,7 +2257,22 @@ export function CreationWizard({
                 </div>
               )}
 
-              {step === 5 && (
+              {step === 5 && editMode && (
+                <div className="space-y-6">
+                  <div className="border-primary/20 bg-primary/5 flex items-start gap-3 rounded-2xl border p-4">
+                    <Eye className="text-primary mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+                    <div>
+                      <p className="text-sm font-medium">Revise as alterações</p>
+                      <p className="text-muted-foreground mt-1 text-xs leading-5">
+                        Confira a prévia ao lado e salve quando estiver tudo certo. Isso não gera
+                        uma nova cobrança — seu presente já está pago.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 5 && !editMode && (
                 <div className="space-y-6">
                   <div className="border-primary/20 bg-primary/5 flex items-start gap-3 rounded-2xl border p-4">
                     <Eye className="text-primary mt-0.5 h-5 w-5 shrink-0" aria-hidden />
@@ -2764,9 +2851,9 @@ export function CreationWizard({
             <Button
               variant="ghost"
               onClick={back}
-              disabled={step === 0}
+              disabled={step === 0 || (editMode && step === 1)}
               aria-label="Voltar"
-              className={cn(step === 0 && "hidden", "px-3 sm:px-6")}
+              className={cn((step === 0 || (editMode && step === 1)) && "hidden", "px-3 sm:px-6")}
             >
               <ArrowLeft className="h-4 w-4" />
               <span aria-hidden className="hidden sm:inline">
@@ -2816,6 +2903,11 @@ export function CreationWizard({
                   {continueLabel}
                 </span>
                 <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : editMode ? (
+              <Button onClick={handleSaveEdits} disabled={busy || saving}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Salvar alterações
               </Button>
             ) : (
               <Button

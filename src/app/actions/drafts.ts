@@ -9,6 +9,8 @@ import {
 } from "@/lib/domain/projects";
 import { resolveProjectPhotos, type PhotoRef, type PublicPhoto } from "@/lib/server/media";
 import { templatePresetsSchema } from "@/lib/domain/templates";
+import { isProjectStatusEditable } from "@/lib/domain/plans";
+import { getCurrentUser } from "@/lib/auth/session";
 
 // Server actions do assistente de criação (seção 10). Todo o estado persistido
 // vive no servidor; o rascunho é retomável via `draft_token`.
@@ -131,15 +133,19 @@ export interface LoadedDraft {
   content: ProjectContent;
   photos: PublicPhoto[];
   updatedAt: string;
+  /** PUBLISHED só chega aqui quando o plano permite editar depois da compra. */
+  projectStatus: "DRAFT" | "PUBLISHED";
+  slug: string | null;
 }
 
-/** Retoma um rascunho existente pelo token (mesmo dispositivo). */
+/** Retoma um rascunho (pré-compra) ou um presente já publicado editável, pelo token. */
 export async function loadDraft(draftToken: string): Promise<LoadedDraft | null> {
   const project = await prisma.project.findUnique({
     where: { draftToken },
-    include: { template: true },
+    include: { template: true, plan: true },
   });
-  if (!project || project.status !== "DRAFT") return null;
+  if (!project) return null;
+  if (!isProjectStatusEditable(project.status, project.plan?.limits)) return null;
 
   const content = parseProjectContent(project.content);
   const photos = await resolveProjectPhotos(project.id, content.photos as PhotoRef[]);
@@ -149,5 +155,29 @@ export async function loadDraft(draftToken: string): Promise<LoadedDraft | null>
     content,
     photos,
     updatedAt: project.updatedAt.toISOString(),
+    projectStatus: project.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+    slug: project.slug,
   };
+}
+
+/**
+ * Ponto de entrada autenticado para editar um presente já publicado: confirma
+ * que quem está logado é o dono e que o plano permite editar depois da
+ * compra, e devolve o draft_token para reabrir o assistente em modo de edição
+ * (reaproveita o mesmo `loadDraft`/`saveDraft` do rascunho pré-compra).
+ */
+export async function startProjectEdit(projectId: string): Promise<{ draftToken: string }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("[edit] Entre na sua conta para editar este presente.");
+
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, ownerId: user.id },
+    include: { plan: true },
+  });
+  if (!project) throw new Error("[edit] Presente não encontrado.");
+  if (!isProjectStatusEditable(project.status, project.plan?.limits)) {
+    throw new Error("[edit] Este plano não permite editar o presente depois da compra.");
+  }
+
+  return { draftToken: project.draftToken };
 }
