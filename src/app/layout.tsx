@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
@@ -39,6 +39,13 @@ export const metadata: Metadata = {
     title: brand.name,
     description: brand.tagline,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fff9f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#171214" },
+  ],
 };
 
 const themeScript = `
