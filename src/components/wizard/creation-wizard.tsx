@@ -34,7 +34,7 @@ import {
   updateDraftTemplate,
   type LoadedDraft,
 } from "@/app/actions/drafts";
-import { uploadPhoto } from "@/app/actions/photos";
+import { finalizePhotoUpload, preparePhotoUpload, uploadPhoto } from "@/app/actions/photos";
 import { quoteCoupon, quoteShipping, startCheckout } from "@/app/actions/checkout";
 import {
   DEFAULT_TEMPLATES,
@@ -67,6 +67,7 @@ import {
   upsertDraftMemory,
   type DraftStep,
 } from "@/lib/client/draft-memory";
+import { uploadPhotoToSignedUrl } from "@/lib/client/photo-upload";
 import { cn, formatBRL } from "@/lib/utils";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -999,7 +1000,18 @@ export function CreationWizard({
       fd.set("draftToken", draftToken);
       fd.set("file", file);
       try {
-        const res = await uploadPhoto(fd);
+        const prepared = await preparePhotoUpload({
+          draftToken,
+          sizeBytes: file.size,
+          mimeType: file.type,
+        });
+        const res =
+          prepared.mode === "direct"
+            ? await (async () => {
+                await uploadPhotoToSignedUrl(prepared.uploadUrl, file, prepared.bodyMode);
+                return finalizePhotoUpload({ draftToken, assetId: prepared.assetId });
+              })()
+            : await uploadPhoto(fd);
         added.push({
           assetId: res.assetId,
           url: res.url,

@@ -38,6 +38,13 @@ export interface WebhookEvent {
   raw: unknown;
 }
 
+export interface WebhookSignatureInput {
+  headers: Headers;
+  rawBody: string;
+  /** ID do recurso recebido na query string; o provedor pode usar o payload como fallback. */
+  dataId?: string | null;
+}
+
 export interface PaymentProvider {
   readonly name: string;
   /** Cria uma intenção de pagamento no provedor. */
@@ -45,7 +52,7 @@ export interface PaymentProvider {
   /** Consulta o status atual no provedor (fonte da verdade). */
   getPaymentStatus(providerPaymentId: string): Promise<PaymentStatus>;
   /** Valida a assinatura do webhook conforme a documentação oficial. */
-  verifyWebhookSignature(headers: Headers, rawBody: string): Promise<boolean>;
+  verifyWebhookSignature(input: WebhookSignatureInput): Promise<boolean>;
   /** Extrai um evento tipado a partir do corpo do webhook. */
   parseWebhookEvent(rawBody: string): WebhookEvent;
 }

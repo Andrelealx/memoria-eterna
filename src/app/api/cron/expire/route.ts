@@ -1,13 +1,19 @@
 import { prisma } from "@/lib/db";
 import { getEmailProvider } from "@/lib/adapters/email/factory";
 
+export const maxDuration = 60;
+
 // Cron de expiração (seções 4, 17, 21). Protegido por CRON_SECRET.
 // Marca projetos publicados como EXPIRED e prepara lembrete de expiração
 // (Plano Momento, ~5º dia = 2 dias antes do vencimento).
 
 export async function GET(req: Request): Promise<Response> {
-  const secret = new URL(req.url).searchParams.get("secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  const configuredSecret = process.env.CRON_SECRET;
+  const authorization = req.headers.get("authorization");
+  const authorized =
+    Boolean(configuredSecret) && authorization === `Bearer ${configuredSecret}`;
+
+  if (!authorized) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -30,17 +36,24 @@ export async function GET(req: Request): Promise<Response> {
     include: { owner: true },
   });
 
-  const email = getEmailProvider();
-  for (const p of soon) {
+  if (soon.length > 0) {
     try {
-      await email.send({
-        to: p.owner?.email ?? "",
-        template: "about-to-expire",
-        subject: "Seu presente está perto de expirar",
-        data: { title: "presente" },
-      });
+      const email = getEmailProvider();
+      for (const p of soon) {
+        if (!p.owner?.email) continue;
+        try {
+          await email.send({
+            to: p.owner.email,
+            template: "about-to-expire",
+            subject: "Seu presente está perto de expirar",
+            data: { title: "presente" },
+          });
+        } catch {
+          // A expiração não depende do provedor de e-mail.
+        }
+      }
     } catch {
-      // log apenas
+      // Sem provedor configurado, a expiração continua funcionando.
     }
   }
 

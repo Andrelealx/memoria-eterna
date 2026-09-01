@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "Criar presente",
 };
 
+// A finalização de fotos e a geração assistida podem envolver processamento
+// remoto; a Vercel Hobby permite até 60 segundos por Server Action.
+export const maxDuration = 60;
+
 export default async function CriarPage({
   searchParams,
 }: {

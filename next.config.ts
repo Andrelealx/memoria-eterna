@@ -1,5 +1,25 @@
 import type { NextConfig } from "next";
 
+function supabaseConnectOrigin(): string | null {
+  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!configured) return null;
+  try {
+    const url = new URL(configured);
+    return url.protocol === "https:" ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+const connectSources = [
+  "'self'",
+  "https://blob.vercel-storage.com",
+  "https://*.blob.vercel-storage.com",
+  supabaseConnectOrigin(),
+]
+  .filter(Boolean)
+  .join(" ");
+
 // CSP compatível com os embeds permitidos (Spotify/YouTube) e com os scripts
 // inline de hidratação do Next.js. `unsafe-inline` é um baseline pragmático;
 // hardening com nonces fica como passo adicional de segurança.
@@ -10,7 +30,7 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "frame-src https://open.spotify.com https://www.youtube.com",
-  "connect-src 'self'",
+  `connect-src ${connectSources}`,
   "object-src 'none'",
   "base-uri 'self'",
 ].join("; ");

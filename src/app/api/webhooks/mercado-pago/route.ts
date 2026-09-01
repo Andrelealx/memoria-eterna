@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
 import { getPaymentProvider } from "@/lib/adapters/payment";
+import { parseMercadoPagoDataId } from "@/lib/adapters/payment/mercado-pago";
 import { processPaymentApproved, processPaymentFailed } from "@/lib/server/orders";
+
+export const maxDuration = 30;
 
 // Webhook do Mercado Pago (seções 14, 21). Valida assinatura e processa de forma
 // idempotente. Nunca confia no retorno visual do navegador.
@@ -9,15 +12,37 @@ export async function POST(req: Request): Promise<Response> {
   const rawBody = await req.text();
   const provider = getPaymentProvider();
 
-  const verified = await provider.verifyWebhookSignature(req.headers, rawBody);
+  let event;
+  try {
+    event = provider.parseWebhookEvent(rawBody);
+  } catch {
+    return new Response("Invalid payload", { status: 400 });
+  }
+
+  const raw = event.raw as Record<string, unknown>;
+  const data = (raw.data ?? raw) as Record<string, unknown>;
+  const queryDataId = parseMercadoPagoDataId(new URL(req.url).searchParams.get("data.id"));
+  const payloadDataId = parseMercadoPagoDataId(data.id);
+
+  // A assinatura oficial usa o ID da URL. Quando ele não vier na query,
+  // aceitamos o ID equivalente do payload. Se ambos existirem, precisam apontar
+  // para o mesmo recurso, inclusive nas integrações legadas que normalizavam case.
+  if (queryDataId && payloadDataId && queryDataId.toLowerCase() !== payloadDataId.toLowerCase()) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const signatureDataId = queryDataId ?? payloadDataId;
+  const verified = await provider.verifyWebhookSignature({
+    headers: req.headers,
+    rawBody,
+    dataId: signatureDataId,
+  });
   if (!verified) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const event = provider.parseWebhookEvent(rawBody);
-  const raw = event.raw as Record<string, unknown>;
-  const data = (raw.data ?? raw) as Record<string, unknown>;
-  const providerPaymentId = String(data.id ?? "");
+  // Usa o mesmo recurso coberto pela assinatura, nunca outro ID arbitrário do body.
+  const providerPaymentId = payloadDataId ?? queryDataId ?? "";
 
   const payment = await prisma.payment.findUnique({ where: { providerPaymentId } });
   if (!payment) {

@@ -15,5 +15,16 @@ export default defineConfig({
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      // O E2E precisa ser hermético mesmo quando o diretório está vinculado à
+      // Vercel e o .env local aponta para o domínio real.
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+      DEV_FAKE_PAYMENT_ENABLED: "true",
+      DEV_FAKE_AI_ENABLED: "true",
+      VERCEL: "",
+      VERCEL_ENV: "",
+      VERCEL_OIDC_TOKEN: "",
+      BLOB_READ_WRITE_TOKEN: "",
+    },
   },
 });

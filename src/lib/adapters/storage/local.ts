@@ -1,6 +1,6 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { MediaStorageAdapter, UploadedMedia } from "./index";
+import type { DownloadOptions, MediaStorageAdapter, UploadedMedia } from "./index";
 
 // Adapter de armazenamento LOCAL — SOMENTE desenvolvimento/teste.
 // Grava arquivos em `.media/` (gitignored). Em produção usa Supabase Storage.
@@ -21,6 +21,14 @@ export class LocalStorageAdapter implements MediaStorageAdapter {
     await mkdir(path.dirname(dest), { recursive: true });
     await writeFile(dest, body);
     return { storageKey: key, mimeType: contentType, sizeBytes: body.length };
+  }
+
+  async download(key: string, options: DownloadOptions): Promise<Uint8Array> {
+    const body = await readFile(this.resolve(key));
+    if (body.length > options.maxBytes) {
+      throw new Error("[storage] Objeto excede o limite permitido.");
+    }
+    return body;
   }
 
   async signedUrl(key: string): Promise<string> {

@@ -37,8 +37,14 @@ produção** e exige `MERCADO_PAGO_ACCESS_TOKEN`.
 ## Validação de webhook
 
 Mercado Pago envia `x-signature` (HMAC SHA-256) e `x-request-id`. A verificação usa
-`HMAC(secret, requestId + "." + rawBody)` com comparação `timingSafeEqual` (ver
+`x-signature: ts=<timestamp>,v1=<hash>` e calcula `HMAC-SHA256` sobre o manifesto
+`id:<data.id>;request-id:<x-request-id>;ts:<ts>;`. O `data.id` vem prioritariamente da query
+string oficial e pode ser recuperado do payload quando ausente. Se os dois existirem, precisam
+identificar o mesmo recurso. A comparação do hash usa `timingSafeEqual` (ver
 `MercadoPagoProvider.verifyWebhookSignature`).
+
+O case original de `data.id` é preservado, conforme o SDK oficial atual, com compatibilidade para
+o formato legado que normalizava identificadores alfanuméricos da URL para minúsculas.
 
 ## Estados e moeda
 

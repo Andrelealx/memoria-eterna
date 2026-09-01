@@ -3,7 +3,13 @@ import type { PaymentProvider } from "./types";
 import { FakePaymentProvider } from "./fake";
 import { MercadoPagoProvider } from "./mercado-pago";
 
-export type { PaymentProvider, CreatePaymentInput, CreatePaymentResult, WebhookEvent } from "./types";
+export type {
+  PaymentProvider,
+  CreatePaymentInput,
+  CreatePaymentResult,
+  WebhookEvent,
+  WebhookSignatureInput,
+} from "./types";
 
 // Factory que devolve o provedor ativo (seção 14). Em desenvolvimento sem
 // credenciais, usa o provedor FAKE (somente dev). Em produção, exige Mercado Pago.

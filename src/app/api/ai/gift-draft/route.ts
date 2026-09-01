@@ -9,6 +9,8 @@ import {
 import { rateLimit } from "@/lib/server/rate-limit";
 import { listActiveTemplates } from "@/lib/server/templates";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const ip =
     request.headers.get("cf-connecting-ip")?.trim() ??

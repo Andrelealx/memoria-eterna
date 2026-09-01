@@ -53,17 +53,22 @@ export async function resolveProjectPhotos(
   });
   const byId = new Map(assets.map((a) => [a.id, a]));
 
-  const out: PublicPhoto[] = [];
-  for (const ref of refs) {
-    const asset = byId.get(ref.assetId);
-    if (!asset) continue;
-    out.push({
-      assetId: ref.assetId,
-      url: await publicMediaUrl(preferredVariantKey(asset)),
-      altText: ref.altText,
-      position: ref.position,
-      isCover: ref.isCover,
-    });
-  }
-  return out.sort((a, b) => a.position - b.position);
+  const photos = await Promise.all(
+    refs.map(async (ref): Promise<PublicPhoto | null> => {
+      const asset = byId.get(ref.assetId);
+      if (!asset) return null;
+
+      return {
+        assetId: ref.assetId,
+        url: await publicMediaUrl(preferredVariantKey(asset)),
+        altText: ref.altText,
+        position: ref.position,
+        isCover: ref.isCover,
+      };
+    }),
+  );
+
+  return photos
+    .filter((photo): photo is PublicPhoto => photo !== null)
+    .sort((a, b) => a.position - b.position);
 }

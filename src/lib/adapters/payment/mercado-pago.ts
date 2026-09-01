@@ -4,6 +4,7 @@ import type {
   CreatePaymentResult,
   PaymentProvider,
   WebhookEvent,
+  WebhookSignatureInput,
 } from "./types";
 import type { PaymentStatus } from "@/lib/domain/enums";
 
@@ -11,11 +12,70 @@ import type { PaymentStatus } from "@/lib/domain/enums";
 // MERCADO_PAGO_WEBHOOK_SECRET. Sem credenciais, `createPayment` falha com erro
 // claro — nunca "simula" sucesso de integração real.
 //
-// A assinatura do webhook segue o padrão oficial: header `x-signature` = HMAC
-// SHA-256 do corpo bruto usando `MERCADO_PAGO_WEBHOOK_SECRET`, comparado de
-// forma constante (timing-safe). Ver docs/PAYMENTS.md.
+// A assinatura do webhook segue o padrão oficial: `x-signature` contém `ts` e
+// `v1`, e o HMAC SHA-256 é calculado sobre o manifesto formado por `data.id`,
+// `x-request-id` e `ts`. Ver docs/PAYMENTS.md.
 
 const API_BASE = "https://api.mercadopago.com";
+
+interface ParsedWebhookSignature {
+  timestamp: string;
+  digest: Buffer;
+}
+
+/** Converte somente os formatos de ID representáveis no manifesto oficial. */
+export function parseMercadoPagoDataId(value: unknown): string | null {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const dataId = String(value).trim();
+  return dataId.length > 0 ? dataId : null;
+}
+
+export function extractMercadoPagoDataId(rawBody: string): string | null {
+  try {
+    const parsed = JSON.parse(rawBody) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const data = (parsed as Record<string, unknown>).data;
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+    return parseMercadoPagoDataId((data as Record<string, unknown>).id);
+  } catch {
+    return null;
+  }
+}
+
+function parseWebhookSignature(value: string): ParsedWebhookSignature | null {
+  let timestamp: string | undefined;
+  let signatureHex: string | undefined;
+
+  for (const rawPart of value.split(",")) {
+    const part = rawPart.trim();
+    const separatorIndex = part.indexOf("=");
+    if (separatorIndex <= 0 || separatorIndex === part.length - 1) return null;
+
+    const key = part.slice(0, separatorIndex).trim().toLowerCase();
+    const partValue = part.slice(separatorIndex + 1).trim();
+    if (!key || !partValue) return null;
+
+    if (key === "ts") {
+      if (timestamp !== undefined) return null;
+      timestamp = partValue;
+    } else if (key === "v1") {
+      if (signatureHex !== undefined) return null;
+      signatureHex = partValue;
+    }
+  }
+
+  if (!timestamp || !/^\d{1,20}$/.test(timestamp)) return null;
+  if (!signatureHex || !/^[a-f\d]{64}$/i.test(signatureHex)) return null;
+
+  return {
+    timestamp,
+    digest: Buffer.from(signatureHex, "hex"),
+  };
+}
+
+function webhookManifest(dataId: string, requestId: string, timestamp: string): string {
+  return `id:${dataId};request-id:${requestId};ts:${timestamp};`;
+}
 
 function mapStatus(mpStatus: string): PaymentStatus {
   switch (mpStatus) {
@@ -112,16 +172,32 @@ export class MercadoPagoProvider implements PaymentProvider {
     return mapStatus(data.status ?? "pending");
   }
 
-  async verifyWebhookSignature(headers: Headers, rawBody: string): Promise<boolean> {
-    const signature = headers.get("x-signature");
-    const requestId = headers.get("x-request-id");
-    if (!signature || !requestId || !this.webhookSecret) return false;
-    const expected = createHmac("sha256", this.webhookSecret)
-      .update(`${requestId}.${rawBody}`)
-      .digest("hex");
-    const a = Buffer.from(signature);
-    const b = Buffer.from(expected);
-    return a.length === b.length && timingSafeEqual(a, b);
+  async verifyWebhookSignature(input: WebhookSignatureInput): Promise<boolean> {
+    const signatureHeader = input.headers.get("x-signature");
+    const requestId = input.headers.get("x-request-id")?.trim();
+    if (!signatureHeader || !requestId || !this.webhookSecret) return false;
+
+    const signature = parseWebhookSignature(signatureHeader);
+    const dataId = parseMercadoPagoDataId(input.dataId) ?? extractMercadoPagoDataId(input.rawBody);
+    if (!signature || !dataId) return false;
+
+    // Desde o SDK Node 3.2.0 o Mercado Pago preserva o case original do ID.
+    // O segundo manifesto mantém compatibilidade com notificações antigas nas
+    // quais IDs alfanuméricos recebidos pela URL eram normalizados para lowercase.
+    const candidateIds = [dataId];
+    const lowercaseDataId = dataId.toLowerCase();
+    if (lowercaseDataId !== dataId) candidateIds.push(lowercaseDataId);
+
+    let verified = false;
+    for (const candidateId of candidateIds) {
+      const expected = createHmac("sha256", this.webhookSecret)
+        .update(webhookManifest(candidateId, requestId, signature.timestamp))
+        .digest();
+      const matches =
+        expected.length === signature.digest.length && timingSafeEqual(expected, signature.digest);
+      verified = matches || verified;
+    }
+    return verified;
   }
 
   parseWebhookEvent(rawBody: string): WebhookEvent {
