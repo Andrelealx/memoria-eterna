@@ -21,6 +21,22 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   CHARGEDBACK: "Chargeback",
 };
 
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  CREATED: "Criado",
+  AWAITING_PAYMENT: "Aguardando pagamento",
+  PAID: "Pago",
+  CANCELLED: "Cancelado",
+  REFUNDED: "Reembolsado",
+  CHARGEDBACK: "Chargeback",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  PIX: "Pix",
+  CARD: "Cartão de crédito",
+  CHECKOUT_PRO: "Checkout Pro (Mercado Pago)",
+  OTHER: "Outro",
+};
+
 export const PHYSICAL_ORDER_LABELS: Record<string, string> = {
   WAITING_PAYMENT: "Aguardando pagamento",
   QUEUED: "Na fila",
