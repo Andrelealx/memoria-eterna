@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { OrderStatus, Prisma } from "@prisma/client";
+import type { OrderStatus, PhysicalOrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -14,18 +14,22 @@ import {
 export const metadata = { title: "Pedidos" };
 
 const ORDER_STATUSES = Object.keys(ORDER_STATUS_LABELS);
+const PHYSICAL_STATUSES = Object.keys(PHYSICAL_ORDER_LABELS);
 const PAGE_SIZE = 50;
 
 export default async function AdminPedidosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; physicalStatus?: string }>;
 }) {
-  const { q, status } = await searchParams;
+  const { q, status, physicalStatus } = await searchParams;
   const query = q?.trim();
 
   const where: Prisma.OrderWhereInput = {
     ...(status && ORDER_STATUSES.includes(status) ? { status: status as OrderStatus } : {}),
+    ...(physicalStatus && PHYSICAL_STATUSES.includes(physicalStatus)
+      ? { physicalOrder: { status: physicalStatus as PhysicalOrderStatus } }
+      : {}),
     ...(query
       ? {
           OR: [
@@ -67,13 +71,25 @@ export default async function AdminPedidosPage({
             </option>
           ))}
         </select>
+        <select
+          name="physicalStatus"
+          defaultValue={physicalStatus ?? ""}
+          className="border-border bg-card rounded-xl border px-3 py-2 text-sm"
+        >
+          <option value="">Toda produção física</option>
+          {PHYSICAL_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {PHYSICAL_ORDER_LABELS[s]}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           Filtrar
         </button>
-        {(query || status) && (
+        {(query || status || physicalStatus) && (
           <Link
             href="/admin/pedidos"
             className="text-muted-foreground hover:text-primary self-center text-sm underline"
@@ -136,7 +152,9 @@ export default async function AdminPedidosPage({
         </table>
         {orders.length === 0 && (
           <p className="mt-4 text-muted-foreground">
-            {query || status ? "Nenhum pedido encontrado com esse filtro." : "Nenhum pedido."}
+            {query || status || physicalStatus
+              ? "Nenhum pedido encontrado com esse filtro."
+              : "Nenhum pedido."}
           </p>
         )}
         {orders.length === PAGE_SIZE && (

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
+import { PHYSICAL_ORDER_LABELS } from "@/lib/labels";
 import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Admin" };
@@ -26,15 +28,15 @@ export default async function AdminDashboard() {
   const paidOrders = await prisma.order.count({ where: { status: "PAID" } });
 
   const cards = [
-    { label: "Pedidos hoje", value: String(ordersToday) },
-    { label: "Pedidos (7 dias)", value: String(orders7d) },
-    { label: "Pedidos (30 dias)", value: String(orders30d) },
+    { label: "Pedidos hoje", value: String(ordersToday), href: "/admin/pedidos" },
+    { label: "Pedidos (7 dias)", value: String(orders7d), href: "/admin/pedidos" },
+    { label: "Pedidos (30 dias)", value: String(orders30d), href: "/admin/pedidos" },
     { label: "Receita aprovada", value: formatBRL(revenue) },
     { label: "Ticket médio", value: paidOrders > 0 ? formatBRL(Math.round(revenue / paidOrders)) : "—" },
     { label: "Projetos processando", value: String(projectsProcessing) },
-    { label: "Tags a gravar", value: String(tagsToWrite) },
-    { label: "Tags a testar", value: String(tagsToTest) },
-    { label: "Denúncias pendentes", value: String(reportsOpen) },
+    { label: "Tags a gravar", value: String(tagsToWrite), href: "/admin/nfc" },
+    { label: "Tags a testar", value: String(tagsToTest), href: "/admin/nfc" },
+    { label: "Denúncias pendentes", value: String(reportsOpen), href: "/admin/denuncias" },
   ];
 
   return (
@@ -43,7 +45,7 @@ export default async function AdminDashboard() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
-          <StatCard key={c.label} label={c.label} value={c.value} />
+          <StatCard key={c.label} label={c.label} value={c.value} href={c.href} />
         ))}
       </div>
 
@@ -53,9 +55,14 @@ export default async function AdminDashboard() {
       ) : (
         <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {physicalByStatus.map((p) => (
-            <li key={p.status} className="flex justify-between rounded-xl border border-border bg-card px-4 py-2 text-sm">
-              <span>{p.status}</span>
-              <span className="font-medium">{p._count}</span>
+            <li key={p.status}>
+              <Link
+                href={`/admin/pedidos?physicalStatus=${p.status}`}
+                className="flex justify-between rounded-xl border border-border bg-card px-4 py-2 text-sm transition-colors hover:border-primary/40"
+              >
+                <span>{PHYSICAL_ORDER_LABELS[p.status] ?? p.status}</span>
+                <span className="font-medium">{p._count}</span>
+              </Link>
             </li>
           ))}
         </ul>
