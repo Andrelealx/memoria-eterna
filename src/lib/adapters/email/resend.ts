@@ -46,7 +46,7 @@ function escapeHtml(value: string) {
 
 function action(href: string, label: string) {
   const safeHref = escapeHtml(href);
-  return `<a href="${safeHref}" style="display:inline-block;background:#a84e65;color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:999px;margin:8px 8px 8px 0">${escapeHtml(label)}</a>`;
+  return `<a href="${safeHref}" style="display:inline-block;background:#722B45;color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:999px;margin:8px 8px 8px 0">${escapeHtml(label)}</a>`;
 }
 
 function renderEmail(message: EmailMessage) {
@@ -56,7 +56,7 @@ function renderEmail(message: EmailMessage) {
     content = `
       <p>Recebemos um pedido para acessar sua conta.</p>
       <p>${action(message.data.url, "Entrar na minha conta")}</p>
-      <p style="font-size:13px;color:#6b625f">Este link é pessoal e expira em breve. Se você não solicitou o acesso, ignore este e-mail.</p>`;
+      <p style="font-size:13px;color:#6E6568">Este link é pessoal e expira em breve. Se você não solicitou o acesso, ignore este e-mail.</p>`;
   } else if (message.template === "payment-approved" && message.data.accessUrl) {
     const giftAction = message.data.giftUrl
       ? action(message.data.giftUrl, "Ver o presente")
@@ -64,7 +64,7 @@ function renderEmail(message: EmailMessage) {
     content = `
       <p>Seu pagamento do pedido <strong>${escapeHtml(message.data.orderNumber ?? "")}</strong> foi aprovado e seu presente já está disponível.</p>
       <p>${giftAction}${action(message.data.accessUrl, "Acessar e editar")}</p>
-      <p style="font-size:13px;color:#6b625f">Guarde este e-mail. O botão de acesso é pessoal e não deve ser compartilhado.</p>`;
+      <p style="font-size:13px;color:#6E6568">Guarde este e-mail. O botão de acesso é pessoal e não deve ser compartilhado.</p>`;
   } else if (message.template === "about-to-expire") {
     content = `<p>Seu presente ${escapeHtml(message.data.title ?? "")} está perto de expirar. Entre na sua conta para conferir as opções disponíveis.</p>`;
   } else {
@@ -73,14 +73,14 @@ function renderEmail(message: EmailMessage) {
 
   return `<!doctype html>
   <html lang="pt-BR">
-    <body style="margin:0;background:#f8f3f1;font-family:Arial,sans-serif;color:#2b2321">
+    <body style="margin:0;background:#FFF9F6;font-family:Arial,sans-serif;color:#292326">
       <div style="max-width:600px;margin:0 auto;padding:32px 20px">
-        <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #eadfdb">
-          <p style="margin:0 0 20px;color:#a84e65;font-weight:800;font-size:18px">${escapeHtml(brand.name)}</p>
+        <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #EADDE0">
+          <p style="margin:0 0 20px;color:#722B45;font-weight:800;font-size:18px">${escapeHtml(brand.name)}</p>
           <h1 style="font-size:26px;line-height:1.2;margin:0 0 18px">${escapeHtml(message.subject)}</h1>
           <div style="font-size:16px;line-height:1.65">${content}</div>
         </div>
-        <p style="font-size:12px;color:#7b706c;text-align:center;margin-top:18px">Uma lembrança feita com carinho, guardada em um só lugar.</p>
+        <p style="font-size:12px;color:#6E6568;text-align:center;margin-top:18px">Uma lembrança feita com carinho, guardada em um só lugar.</p>
       </div>
     </body>
   </html>`;

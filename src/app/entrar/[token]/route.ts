@@ -16,7 +16,7 @@ export async function GET(
   const userId = await consumeMagicLink(token);
 
   if (!userId) {
-    return NextResponse.redirect(new URL("/entrar", req.url));
+    return NextResponse.redirect(new URL("/entrar?erro=link-invalido", req.url));
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });

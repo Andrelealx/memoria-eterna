@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/db";
 import { generateMagicLinkToken, hashToken } from "@/lib/domain/tokens";
 
-// Magic link de DESENVOLVIMENTO (seção 12). A produção delega a autenticação ao
-// Supabase Auth. Este serviço permite exercitar o fluxo "compra sem senha"
-// localmente com o PostgreSQL de dev, sem depender de credenciais externas.
+// Autenticação sem senha por magic link (seção 12), via PostgreSQL + Resend.
+// Token de uso único, hash no banco (nunca o valor bruto) e expiração curta.
 
 const MAGIC_LINK_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
