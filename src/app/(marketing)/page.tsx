@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Check, Heart, Link2, QrCode, Smartphone, Sparkles } from "lucide-react";
 import { cn, formatBRL } from "@/lib/utils";
 import type { PlanDefinition } from "@/lib/domain/plans";
@@ -136,21 +137,21 @@ function PhoneMockup() {
 function HeartKeychain() {
   return (
     <svg viewBox="0 0 80 100" className="h-24 w-20" aria-hidden="true">
-      <circle cx="40" cy="14" r="6" fill="none" stroke="#C6A15B" strokeWidth="2" />
+      <circle cx="40" cy="14" r="6" fill="none" stroke="#C5A167" strokeWidth="2" />
       <path
         d="M40 20 L40 34"
-        stroke="#C6A15B"
+        stroke="#C5A167"
         strokeWidth="2"
         fill="none"
         strokeLinecap="round"
       />
       <path
         d="M40 34 C 22 28 16 48 24 58 C 30 66 40 70 40 70 C 40 70 50 66 56 58 C 64 48 58 28 40 34 Z"
-        fill="#7A2438"
+        fill="#722B45"
         stroke="#4B1625"
         strokeWidth="1.5"
       />
-      <path d="M26 50 C 24 48 22 48 21 50" stroke="#FFF9F5" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.7" />
+      <path d="M26 50 C 24 48 22 48 21 50" stroke="#FFF9F6" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.7" />
     </svg>
   );
 }
@@ -206,6 +207,18 @@ function HowItWorks() {
             </BlurFade>
           ))}
         </div>
+        <BlurFade delay={0.15} className="mt-12">
+          <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border shadow-sm">
+            <Image
+              src="/marketing/escolha-o-estilo.png"
+              alt="Escolha o estilo: vários templates para cada história, em telas de celular."
+              width={1536}
+              height={1024}
+              className="h-auto w-full"
+              sizes="(min-width: 768px) 768px, 100vw"
+            />
+          </div>
+        </BlurFade>
       </div>
     </section>
   );
@@ -235,7 +248,7 @@ function StatsStrip({ templateCount }: { templateCount: number }) {
 }
 
 const NICHE_DESCRIPTIONS: Record<string, string> = {
-  romance: "Para quem você ama",
+  romance: "Para celebrar o amor que nos conecta.",
   amizade: "Para os melhores amigos",
   familia: "Para a família",
   pet: "Para o seu pet",
@@ -247,21 +260,34 @@ const NICHE_DESCRIPTIONS: Record<string, string> = {
 function TemplatesSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <h2 className="sr-only">Modelos para cada ocasião</h2>
       <BlurFade>
-        <h2 className="text-center font-serif text-3xl md:text-4xl">Modelos para cada ocasião</h2>
-        <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-          Do romance ao seu pet: escolha um estilo e personalize com fotos, mensagens e música.
-        </p>
+        <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border shadow-sm">
+          <Image
+            src="/marketing/modelos-para-cada-ocasiao.png"
+            alt="Modelos para cada ocasião: escolha um estilo e personalize com fotos, mensagens e música."
+            width={1536}
+            height={1024}
+            className="h-auto w-full"
+            sizes="(min-width: 768px) 768px, 100vw"
+          />
+        </div>
       </BlurFade>
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {NICHES.map((niche, i) => (
           <BlurFade key={niche} delay={i * 0.06}>
             <Link
               href={`/modelos?nicho=${niche}`}
-              className="group block h-full rounded-3xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
             >
-              <p className="font-serif text-xl">{NICHE_LABELS[niche]}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{NICHE_DESCRIPTIONS[niche]}</p>
+              <Image
+                src={`/marketing/niches/${niche}.png`}
+                alt={`${NICHE_LABELS[niche]} — ${NICHE_DESCRIPTIONS[niche]}`}
+                width={356}
+                height={388}
+                className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              />
             </Link>
           </BlurFade>
         ))}

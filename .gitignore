@@ -51,3 +51,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# pacote bruto da identidade visual (fonte); assets já extraídos ficam em /public
+/identidade visual/

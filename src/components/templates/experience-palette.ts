@@ -11,7 +11,7 @@ export interface ExperiencePalette {
 }
 
 const PALETTES: Record<string, ExperiencePalette> = {
-  vinho: { background: "#fff7f5", surface: "#ffffff", ink: "#2f1720", muted: "#755d65", accent: "#7a2438", accentSoft: "#f4dce2", contrast: "#fffaf8" },
+  vinho: { background: "#fff7f5", surface: "#ffffff", ink: "#2f1720", muted: "#755d65", accent: "#722b45", accentSoft: "#f4dce2", contrast: "#fffaf8" },
   "rosa-queimado": { background: "#fff7f8", surface: "#ffffff", ink: "#342126", muted: "#80646c", accent: "#a84f68", accentSoft: "#f6dfe6", contrast: "#ffffff" },
   dourado: { background: "#fbf8f0", surface: "#ffffff", ink: "#29251d", muted: "#746b59", accent: "#92702f", accentSoft: "#eee3c8", contrast: "#ffffff" },
   grafite: { background: "#f6f4f3", surface: "#ffffff", ink: "#201d1e", muted: "#6b6567", accent: "#3e3739", accentSoft: "#e5e1e2", contrast: "#ffffff" },

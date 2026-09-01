@@ -7,27 +7,27 @@
  * Contraste WCAG AA. O dourado é decorativo (nunca a única cor de texto pequeno).
  */
 :root {
-  --background: #fff9f5; /* creme */
-  --foreground: #231f20; /* grafite */
+  --background: #fff9f6; /* creme */
+  --foreground: #292326; /* grafite quente */
 
   --card: #ffffff;
-  --card-foreground: #231f20;
+  --card-foreground: #292326;
 
-  --primary: #7a2438; /* vinho */
+  --primary: #722b45; /* vinho elegante */
   --primary-foreground: #ffffff;
   --primary-dark: #4b1625; /* vinho escuro */
 
-  --secondary: #f8e8ec; /* rosa muito claro */
+  --secondary: #f8e8ec; /* fundo suave */
   --secondary-foreground: #4b1625;
 
-  --accent: #c6a15b; /* dourado discreto */
+  --accent: #c5a167; /* dourado suave */
 
   --muted: #6e6568; /* cinza de texto */
   --muted-foreground: #6e6568;
 
   --border: #eadde0; /* borda suave */
 
-  --ring: #d99aaa; /* rosa queimado */
+  --ring: #c86682; /* rosa queimado */
 
   --success: #247a52;
   --error: #b42318;
@@ -66,27 +66,27 @@
   color-scheme: light;
   background-color: var(--background);
   color: var(--foreground);
-  --background: #fff9f5;
-  --foreground: #231f20;
+  --background: #fff9f6;
+  --foreground: #292326;
   --card: #ffffff;
-  --card-foreground: #231f20;
-  --primary: #7a2438;
+  --card-foreground: #292326;
+  --primary: #722b45;
   --primary-foreground: #ffffff;
   --primary-dark: #4b1625;
   --secondary: #f8e8ec;
   --secondary-foreground: #4b1625;
-  --accent: #c6a15b;
+  --accent: #c5a167;
   --muted: #6e6568;
   --muted-foreground: #6e6568;
   --border: #eadde0;
-  --ring: #d99aaa;
+  --ring: #c86682;
   --success: #247a52;
   --error: #b42318;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-creme: #fff9f5;
+  --color-creme: #fff9f6;
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);

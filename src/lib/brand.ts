@@ -16,16 +16,16 @@ export const brand = {
   tagline: "Suas memórias em um presente que pode ser tocado.",
 } as const;
 
-// Paleta (seção 7) — referência central para uso em SVG/QR e afins.
+// Paleta oficial (Manual de Identidade Visual, seção 7).
 export const palette = {
-  creme: "#FFF9F5",
+  creme: "#FFF9F6",
   white: "#FFFFFF",
-  vinho: "#7A2438",
+  vinho: "#722B45",
   vinhoEscuro: "#4B1625",
-  rosaQueimado: "#D99AAA",
+  rosaQueimado: "#C86682",
   rosaClaro: "#F8E8EC",
-  dourado: "#C6A15B",
-  grafite: "#231F20",
+  dourado: "#C5A167",
+  grafite: "#292326",
   cinzaTexto: "#6E6568",
   bordaSuave: "#EADDE0",
   sucesso: "#247A52",

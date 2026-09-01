@@ -13,7 +13,7 @@ interface SpotlightProps {
   size?: number;
 }
 
-export function Spotlight({ children, className, color = "#C6A15B", size = 420 }: SpotlightProps) {
+export function Spotlight({ children, className, color = "#C5A167", size = 420 }: SpotlightProps) {
   const x = useMotionValue(-size / 2);
   const y = useMotionValue(-size / 2);
   const springX = useSpring(x, { stiffness: 150, damping: 20 });

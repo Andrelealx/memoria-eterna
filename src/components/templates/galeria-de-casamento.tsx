@@ -8,7 +8,7 @@ export function GaleriaDeCasamento({ content, photos }: TemplateProps) {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800">
       <header className="px-6 py-16 text-center">
-        <p className="text-sm uppercase tracking-[0.35em] text-[#C6A15B]">Galeria de casamento</p>
+        <p className="text-sm uppercase tracking-[0.35em] text-[#C5A167]">Galeria de casamento</p>
         <h1 className="mt-4 font-serif text-4xl md:text-5xl">
           {content.creatorName} &amp; {content.recipientName}
         </h1>
@@ -46,10 +46,10 @@ export function GaleriaDeCasamento({ content, photos }: TemplateProps) {
           <BlurFade>
             <section className="mt-14">
               <h2 className="text-center font-serif text-2xl">Nossa história</h2>
-              <ol className="mx-auto mt-8 max-w-md space-y-8 border-l border-[#C6A15B] pl-6">
+              <ol className="mx-auto mt-8 max-w-md space-y-8 border-l border-[#C5A167] pl-6">
                 {content.moments.map((m) => (
                   <li key={m.id} className="relative">
-                    <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-[#C6A15B]" />
+                    <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-[#C5A167]" />
                     {m.date && <p className="text-sm text-stone-500">{m.date}</p>}
                     <h3 className="font-serif text-lg">{m.title}</h3>
                     {m.text && <p className="mt-1 text-sm leading-6 text-stone-600">{m.text}</p>}

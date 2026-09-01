@@ -12,7 +12,7 @@ interface FloatingHeartsProps {
   color?: string;
 }
 
-export function FloatingHearts({ className, count = 12, color = "#D99AAA" }: FloatingHeartsProps) {
+export function FloatingHearts({ className, count = 12, color = "#C86682" }: FloatingHeartsProps) {
   const hearts = React.useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({

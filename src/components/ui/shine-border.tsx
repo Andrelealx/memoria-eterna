@@ -14,7 +14,7 @@ export function ShineBorder({
   children,
   className,
   borderRadius = 24,
-  color = "#C6A15B",
+  color = "#C5A167",
   borderWidth = 1,
 }: ShineBorderProps) {
   return (
