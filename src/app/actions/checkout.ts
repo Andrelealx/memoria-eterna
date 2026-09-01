@@ -15,7 +15,7 @@ import { z } from "zod";
 import { getShippingProvider } from "@/lib/adapters/shipping/factory";
 import { calculateDiscount } from "@/lib/domain/pricing";
 import { isCouponEligible, normalizeCouponCode } from "@/lib/domain/coupons";
-import { checkoutSchema, type ShippingAddressInput } from "@/lib/domain/checkout";
+import { checkoutSchema, type CardPaymentInput, type ShippingAddressInput } from "@/lib/domain/checkout";
 
 // Server actions do checkout (seção 14). O total é recalculado no servidor.
 
@@ -110,6 +110,7 @@ export async function startCheckout(input: {
   email: string;
   name?: string;
   method: PaymentMethod;
+  card?: CardPaymentInput;
   couponCode?: string;
   acceptedTerms: boolean;
   shippingAddress?: ShippingAddressInput;
@@ -136,6 +137,7 @@ export async function startCheckout(input: {
       parsed.data.method,
       parsed.data.email,
       parsed.data.name,
+      parsed.data.card,
     );
   } catch (error) {
     // Se o provedor falhar antes de criar a cobrança, devolve o projeto ao rascunho

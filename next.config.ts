@@ -13,23 +13,36 @@ function supabaseConnectOrigin(): string | null {
 
 const connectSources = [
   "'self'",
+  // URLs PUT assinadas do SDK usam o endpoint de controle oficial.
+  "https://vercel.com",
   "https://blob.vercel-storage.com",
   "https://*.blob.vercel-storage.com",
+  // Tokenização de cartão (Card Form) fala direto com a API do Mercado Pago
+  // a partir do navegador; nenhum dado de cartão passa pelo nosso servidor.
+  // Inclui os domínios de campos seguros e antifraude (Mercado Livre) usados
+  // internamente pelo SDK.
+  "https://api.mercadopago.com",
+  "https://events.mercadopago.com",
+  "https://secure-fields.mercadopago.com",
+  "https://api-static.mercadopago.com",
+  "https://www.mercadolibre.com",
+  "https://api.mercadolibre.com",
   supabaseConnectOrigin(),
 ]
   .filter(Boolean)
   .join(" ");
 
-// CSP compatível com os embeds permitidos (Spotify/YouTube) e com os scripts
-// inline de hidratação do Next.js. `unsafe-inline` é um baseline pragmático;
-// hardening com nonces fica como passo adicional de segurança.
+// CSP compatível com os embeds permitidos (Spotify/YouTube), o SDK de
+// pagamento (Mercado Pago Card Form) e os scripts inline de hidratação do
+// Next.js. `unsafe-inline` é um baseline pragmático; hardening com nonces
+// fica como passo adicional de segurança.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "frame-src https://open.spotify.com https://www.youtube.com",
+  "frame-src https://open.spotify.com https://www.youtube.com https://www.mercadopago.com https://api.mercadopago.com https://www.mercadolibre.com https://secure-fields.mercadopago.com",
   `connect-src ${connectSources}`,
   "object-src 'none'",
   "base-uri 'self'",

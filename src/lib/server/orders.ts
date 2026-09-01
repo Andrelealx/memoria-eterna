@@ -38,6 +38,14 @@ export interface CreateOrderResult {
   total: number;
 }
 
+export interface CardPaymentDetails {
+  token: string;
+  installments: number;
+  paymentMethodId: string;
+  issuerId?: string;
+  identificationNumber: string;
+}
+
 export interface ShippingAddress {
   recipient: string;
   cep: string;
@@ -421,12 +429,16 @@ export async function initiatePayment(
   method: PaymentMethod,
   payerEmail: string,
   payerName?: string,
+  card?: CardPaymentDetails,
 ): Promise<InitiatePaymentResult> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: { order: true },
   });
   if (!payment) throw new Error("[payment] Pagamento não encontrado.");
+  if (method === "CARD" && !card) {
+    throw new Error("[payment] Dados do cartão ausentes.");
+  }
 
   const provider = getPaymentProvider();
   const result = await provider.createPayment({
@@ -434,8 +446,21 @@ export async function initiatePayment(
     amountCents: payment.amount,
     method,
     idempotencyKey: payment.idempotencyKey,
-    payer: { email: payerEmail, name: payerName },
+    payer: {
+      email: payerEmail,
+      name: payerName,
+      identificationType: card ? "CPF" : undefined,
+      identificationNumber: card?.identificationNumber,
+    },
     description: `Presente ${payment.order.orderNumber}`,
+    card: card
+      ? {
+          token: card.token,
+          installments: card.installments,
+          paymentMethodId: card.paymentMethodId,
+          issuerId: card.issuerId,
+        }
+      : undefined,
   });
 
   // Persiste apenas o DTO normalizado necessário para reexibir a cobrança.

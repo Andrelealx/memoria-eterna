@@ -37,6 +37,11 @@ import {
 import { finalizePhotoUpload, preparePhotoUpload, uploadPhoto } from "@/app/actions/photos";
 import { quoteCoupon, quoteShipping, startCheckout } from "@/app/actions/checkout";
 import {
+  CardPaymentForm,
+  type CardPaymentFormHandle,
+  type CardTokenData,
+} from "@/components/checkout/card-payment-form";
+import {
   DEFAULT_TEMPLATES,
   NICHE_LABELS,
   groupTemplatesByNiche,
@@ -278,7 +283,8 @@ export function CreationWizard({
   const [email, setEmail] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [checkoutRecovered, setCheckoutRecovered] = useState(false);
-  const method = "PIX" as const;
+  const [method, setMethod] = useState<"PIX" | "CARD">("PIX");
+  const cardFormRef = useRef<CardPaymentFormHandle>(null);
   const [address, setAddress] = useState<CheckoutAddress>(EMPTY_ADDRESS);
   const [shipping, setShipping] = useState<{
     shippingCents: number;
@@ -831,6 +837,58 @@ export function CreationWizard({
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  function checkoutActionErrorFocus() {
+    window.requestAnimationFrame(() => {
+      const alert = document.getElementById("checkout-action-error");
+      alert?.scrollIntoView({ behavior: "smooth", block: "center" });
+      alert?.focus({ preventScroll: true });
+    });
+  }
+
+  /** Validações comuns a Pix e cartão, antes de criar a cobrança. */
+  function checkoutIsValid(): boolean {
+    const validationError = stepValidationMessage(1, content, musicInput);
+    if (validationError) {
+      showValidationError(validationError, essentialFieldId());
+      return false;
+    }
+    const planIssue = planCompatibilityMessage(selectedPlan, content, photos.length);
+    if (planIssue) {
+      showValidationError(planIssue, "plan-options");
+      return false;
+    }
+    if (selectedPlan.includesPhysical) {
+      const addressIssue = shippingAddressIssue(address);
+      if (addressIssue) {
+        showValidationError(addressIssue.message, addressIssue.elementId);
+        return false;
+      }
+      if (!shipping) {
+        showValidationError(
+          "Calcule o frete para confirmar o prazo e o valor da entrega.",
+          "shipping-calculate",
+        );
+        return false;
+      }
+    }
+    if (!consent) {
+      showValidationError(
+        "Aceite os Termos e a Política de Privacidade para continuar.",
+        "checkout-consent",
+      );
+      return false;
+    }
+    if (!EMAIL_RE.test(email.trim())) {
+      showValidationError("Digite um e-mail válido para receber o acesso.", "checkout-email");
+      return false;
+    }
+    if (buyerName.trim().length < 2) {
+      showValidationError("Digite o seu nome com pelo menos 2 caracteres.", "buyer-name");
+      return false;
+    }
+    return true;
+  }
+
   async function handleCheckout() {
     if (!draftToken) return;
     setBusy(true);
@@ -838,45 +896,7 @@ export function CreationWizard({
     setFieldErrors({});
     setCheckoutError(null);
     try {
-      const validationError = stepValidationMessage(1, content, musicInput);
-      if (validationError) {
-        showValidationError(validationError, essentialFieldId());
-        return;
-      }
-      const planIssue = planCompatibilityMessage(selectedPlan, content, photos.length);
-      if (planIssue) {
-        showValidationError(planIssue, "plan-options");
-        return;
-      }
-      if (selectedPlan.includesPhysical) {
-        const addressIssue = shippingAddressIssue(address);
-        if (addressIssue) {
-          showValidationError(addressIssue.message, addressIssue.elementId);
-          return;
-        }
-        if (!shipping) {
-          showValidationError(
-            "Calcule o frete para confirmar o prazo e o valor da entrega.",
-            "shipping-calculate",
-          );
-          return;
-        }
-      }
-      if (!consent) {
-        showValidationError(
-          "Aceite os Termos e a Política de Privacidade para continuar.",
-          "checkout-consent",
-        );
-        return;
-      }
-      if (!EMAIL_RE.test(email.trim())) {
-        showValidationError("Digite um e-mail válido para receber o acesso.", "checkout-email");
-        return;
-      }
-      if (buyerName.trim().length < 2) {
-        showValidationError("Digite o seu nome com pelo menos 2 caracteres.", "buyer-name");
-        return;
-      }
+      if (!checkoutIsValid()) return;
       const saved = await persist();
       if (!saved) return;
       const res = await startCheckout({
@@ -884,7 +904,7 @@ export function CreationWizard({
         planSlug,
         email,
         name: buyerName,
-        method,
+        method: "PIX",
         couponCode: activeCoupon?.code,
         acceptedTerms: consent,
         shippingAddress: selectedPlan.includesPhysical ? address : undefined,
@@ -895,14 +915,62 @@ export function CreationWizard({
       router.push(`/pagamento/${res.redirect}?order=${res.orderId}`);
     } catch (e) {
       setCheckoutError(friendlyError(e, "Falha ao iniciar o pagamento."));
-      window.requestAnimationFrame(() => {
-        const alert = document.getElementById("checkout-action-error");
-        alert?.scrollIntoView({ behavior: "smooth", block: "center" });
-        alert?.focus({ preventScroll: true });
-      });
+      checkoutActionErrorFocus();
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Roda as validações e persiste o rascunho; o token do cartão chega depois,
+   * de forma assíncrona, via `onTokenized` do Card Form do Mercado Pago. */
+  async function handleCardSubmit() {
+    if (!draftToken) return;
+    setBusy(true);
+    setError(null);
+    setFieldErrors({});
+    setCheckoutError(null);
+    if (!checkoutIsValid()) {
+      setBusy(false);
+      return;
+    }
+    const saved = await persist();
+    if (!saved) {
+      setBusy(false);
+      return;
+    }
+    cardFormRef.current?.submit();
+  }
+
+  async function handleCardTokenized(card: CardTokenData) {
+    if (!draftToken) {
+      setBusy(false);
+      return;
+    }
+    try {
+      const res = await startCheckout({
+        draftToken,
+        planSlug,
+        email,
+        name: buyerName,
+        method: "CARD",
+        card,
+        couponCode: activeCoupon?.code,
+        acceptedTerms: consent,
+        shippingAddress: selectedPlan.includesPhysical ? address : undefined,
+      });
+      router.push(`/pagamento/${res.redirect}?order=${res.orderId}`);
+    } catch (e) {
+      setCheckoutError(friendlyError(e, "Falha ao processar o pagamento com cartão."));
+      checkoutActionErrorFocus();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleCardError(message: string) {
+    setCheckoutError(message);
+    checkoutActionErrorFocus();
+    setBusy(false);
   }
 
   async function calculateShipping() {
@@ -2550,19 +2618,64 @@ export function CreationWizard({
                   <div>
                     <Label>Forma de pagamento</Label>
                     <div className="mt-1.5 grid grid-cols-2 gap-3">
-                      <div className="border-primary bg-card text-primary rounded-xl border px-4 py-3 text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMethod("PIX");
+                          setCheckoutError(null);
+                        }}
+                        className={cn(
+                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                          method === "PIX"
+                            ? "border-primary bg-card text-primary"
+                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                        )}
+                      >
                         Pix{" "}
-                        <span className="text-muted-foreground mt-1 block text-xs font-normal">
+                        <span className="mt-1 block text-xs font-normal opacity-80">
                           Aprovação rápida
                         </span>
-                      </div>
-                      <div
-                        className="border-border bg-secondary/50 text-muted-foreground rounded-xl border px-4 py-3 text-sm"
-                        aria-disabled="true"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMethod("CARD");
+                          setCheckoutError(null);
+                        }}
+                        className={cn(
+                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                          method === "CARD"
+                            ? "border-primary bg-card text-primary"
+                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                        )}
                       >
-                        Cartão <span className="mt-1 block text-xs">Em breve</span>
-                      </div>
+                        Cartão de crédito{" "}
+                        <span className="mt-1 block text-xs font-normal opacity-80">
+                          Em até 12x
+                        </span>
+                      </button>
                     </div>
+
+                    {method === "CARD" && (
+                      <div className="border-border bg-card mt-4 rounded-2xl border p-4 sm:p-5">
+                        {process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ? (
+                          <CardPaymentForm
+                            ref={cardFormRef}
+                            publicKey={process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY}
+                            amountCents={checkoutTotalCents}
+                            payerEmail={email}
+                            payerName={buyerName}
+                            disabled={busy}
+                            onTokenized={handleCardTokenized}
+                            onError={handleCardError}
+                          />
+                        ) : (
+                          <p className="text-error text-sm" role="alert">
+                            Pagamento por cartão indisponível no momento. Use o Pix.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2647,11 +2760,13 @@ export function CreationWizard({
               <Button
                 data-analytics="checkout_start"
                 data-analytics-label={selectedPlan.slug}
-                onClick={handleCheckout}
+                onClick={method === "PIX" ? handleCheckout : handleCardSubmit}
                 disabled={busy || saving}
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Gerar Pix de {formatBRL(checkoutTotalCents)}
+                {method === "PIX"
+                  ? `Gerar Pix de ${formatBRL(checkoutTotalCents)}`
+                  : `Pagar ${formatBRL(checkoutTotalCents)} no cartão`}
               </Button>
             )}
           </div>

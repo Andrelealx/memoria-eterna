@@ -10,6 +10,14 @@ export interface PayerInfo {
   identificationNumber?: string;
 }
 
+/** Cartão já tokenizado no navegador (Card Form) — nunca dados brutos. */
+export interface CardPaymentDetails {
+  token: string;
+  installments: number;
+  paymentMethodId: string;
+  issuerId?: string;
+}
+
 export interface CreatePaymentInput {
   orderId: string;
   amountCents: number;
@@ -17,6 +25,7 @@ export interface CreatePaymentInput {
   idempotencyKey: string;
   payer: PayerInfo;
   description: string;
+  card?: CardPaymentDetails;
 }
 
 export interface PixResult {

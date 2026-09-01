@@ -117,15 +117,44 @@ export class MercadoPagoProvider implements PaymentProvider {
 
   async createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult> {
     const token = this.requireCredentials();
-    const method = input.method === "PIX" ? "pix" : "credit_card";
-    const body = {
-      transaction_amount: input.amountCents / 100,
-      description: input.description,
-      payment_method_id: method,
-      payer: { email: input.payer.email, first_name: input.payer.name },
-      external_reference: input.orderId,
-      notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/mercado-pago`,
-    };
+    const notificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/mercado-pago`;
+
+    let body: Record<string, unknown>;
+    if (input.method === "CARD") {
+      if (!input.card) {
+        throw new Error("[mercado_pago] dados do cartão (token) ausentes na criação do pagamento.");
+      }
+      body = {
+        transaction_amount: input.amountCents / 100,
+        description: input.description,
+        token: input.card.token,
+        installments: input.card.installments,
+        payment_method_id: input.card.paymentMethodId,
+        issuer_id: input.card.issuerId,
+        payer: {
+          email: input.payer.email,
+          first_name: input.payer.name,
+          identification:
+            input.payer.identificationType && input.payer.identificationNumber
+              ? {
+                  type: input.payer.identificationType,
+                  number: input.payer.identificationNumber,
+                }
+              : undefined,
+        },
+        external_reference: input.orderId,
+        notification_url: notificationUrl,
+      };
+    } else {
+      body = {
+        transaction_amount: input.amountCents / 100,
+        description: input.description,
+        payment_method_id: "pix",
+        payer: { email: input.payer.email, first_name: input.payer.name },
+        external_reference: input.orderId,
+        notification_url: notificationUrl,
+      };
+    }
 
     const res = await fetch(`${API_BASE}/v1/payments`, {
       method: "POST",
@@ -150,7 +179,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     const pointOfInteraction = data.point_of_interaction as
       | { transaction_data?: { qr_code?: string; qr_code_base64?: string } }
       | undefined;
-    if (method === "pix" && pointOfInteraction?.transaction_data) {
+    if (input.method === "PIX" && pointOfInteraction?.transaction_data) {
       const td = pointOfInteraction.transaction_data;
       result.pix = {
         qrCode: td.qr_code ?? "",
