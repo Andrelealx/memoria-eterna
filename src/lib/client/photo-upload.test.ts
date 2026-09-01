@@ -64,7 +64,11 @@ describe("upload direto de fotos", () => {
 
     const [, init] = fetcher.mock.calls[0];
     expect(init?.method).toBe("PUT");
-    expect(init?.headers).toEqual({ "Content-Type": "image/webp" });
+    expect(init?.headers).toEqual({
+      "Content-Type": "image/webp",
+      "x-content-type": "image/webp",
+      "x-vercel-blob-access": "private",
+    });
     expect(init?.body).toBe(file);
   });
 });

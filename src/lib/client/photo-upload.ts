@@ -35,7 +35,13 @@ export async function uploadPhotoToSignedUrl(
     headers:
       bodyMode === "multipart"
         ? { "x-upsert": "false" }
-        : { "Content-Type": file.type || "application/octet-stream" },
+        : {
+            // O endpoint de controle do Vercel Blob usa estes metadados para
+            // validar o store privado e as restrições da URL assinada.
+            "Content-Type": file.type || "application/octet-stream",
+            "x-content-type": file.type || "application/octet-stream",
+            "x-vercel-blob-access": "private",
+          },
     body,
   });
   if (!response.ok) {
