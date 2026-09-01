@@ -120,15 +120,15 @@ function FloatingTag({ label }: { label: string }) {
 function PhoneMockup() {
   return (
     <div className="h-[460px] w-[230px] rounded-[2.5rem] border border-border bg-card p-3 shadow-sm">
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-[2rem] bg-background">
-        <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-secondary to-background p-5 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full border border-border bg-card">
-            <Heart className="h-8 w-8 text-primary" />
-          </div>
-          <p className="font-serif text-xl text-foreground">Alex &amp; Dani</p>
-          <p className="text-xs text-muted-foreground">Juntos desde 14 de junho</p>
-          <div className="mt-2 h-2 w-24 rounded-full bg-primary/20" />
-        </div>
+      <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-background">
+        <Image
+          src="/marketing/hero-preview.png"
+          alt="Prévia do modelo Romance Clássico: capa com Alex &amp; Dani."
+          fill
+          sizes="230px"
+          priority
+          className="object-cover object-top"
+        />
       </div>
     </div>
   );

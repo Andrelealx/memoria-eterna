@@ -3166,12 +3166,7 @@ function Step0({
                 : "border-border hover:border-primary bg-card",
             )}
           >
-            <TemplateThumbnail
-              niche={template.niche}
-              name={template.name}
-              slug={template.slug}
-              compact
-            />
+            <TemplateThumbnail name={template.name} slug={template.slug} compact />
             <p className="mt-4 font-serif text-lg">{template.name}</p>
             <p className="text-muted-foreground mt-1 text-xs leading-5">{template.description}</p>
             {selected === template.slug && (

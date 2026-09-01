@@ -72,7 +72,7 @@ export default async function ModelosPage({
               <BlurFade key={template.slug} delay={index * 0.08} className="h-full">
                 <ShineBorder borderRadius={24} className="h-full">
                   <article className="flex h-full flex-col p-5">
-                    <TemplateThumbnail niche={template.niche} name={template.name} slug={template.slug} />
+                    <TemplateThumbnail name={template.name} slug={template.slug} />
                     <h3 className="mt-5 font-serif text-xl">{template.name}</h3>
                     <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">
                       {template.description}
