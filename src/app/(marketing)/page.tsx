@@ -119,7 +119,7 @@ function FloatingTag({ label }: { label: string }) {
 
 function PhoneMockup() {
   return (
-    <div className="h-[460px] w-[230px] rounded-[2.5rem] border border-border bg-card p-3 shadow-sm">
+    <div className="h-[460px] w-[230px] rounded-[2.5rem] bg-[#1c1719] p-[10px] shadow-xl ring-1 ring-black/10">
       <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-background">
         <Image
           src="/marketing/hero-preview.png"
@@ -129,6 +129,10 @@ function PhoneMockup() {
           priority
           className="object-cover object-top"
         />
+        {/* Notch */}
+        <div className="absolute left-1/2 top-2 h-4 w-20 -translate-x-1/2 rounded-full bg-black/80" />
+        {/* Indicador de home */}
+        <div className="absolute bottom-1.5 left-1/2 h-1 w-20 -translate-x-1/2 rounded-full bg-white/70" />
       </div>
     </div>
   );

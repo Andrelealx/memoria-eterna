@@ -54,8 +54,10 @@ async function main() {
   }
   await cardPage.close();
 
-  // Mockup do celular na home: recorte alto e estreito, estilo tela de telefone.
-  const heroPage = await browser.newPage({ viewport: { width: 360, height: 1400 } });
+  // Mockup do celular na home: viewport baixo o bastante para a capa (80vh)
+  // caber inteira no recorte, incluindo o título "Alex & Dani" e a data —
+  // não só o fundo. Aspecto ~206:436 (área útil do PhoneMockup).
+  const heroPage = await browser.newPage({ viewport: { width: 360, height: 950 } });
   await heroPage.goto(`${BASE_URL}/modelos/romance-classico`, { waitUntil: "networkidle" });
   const heroRoot = heroPage.locator(".experience-root");
   await heroRoot.waitFor({ state: "visible" });
@@ -63,7 +65,7 @@ async function main() {
   const heroBox = await heroRoot.boundingBox();
   await heroPage.screenshot({
     path: path.resolve("public/marketing/hero-preview.png"),
-    clip: { x: heroBox.x, y: heroBox.y, width: 360, height: 780 },
+    clip: { x: heroBox.x, y: heroBox.y, width: 360, height: 800 },
   });
   console.log("hero ok");
   await heroPage.close();
