@@ -76,7 +76,7 @@ export const NFC_TAG_STATUSES = [
 ] as const;
 export type NfcTagStatus = (typeof NFC_TAG_STATUSES)[number];
 
-export const PAYMENT_METHODS = ["PIX", "CARD", "OTHER"] as const;
+export const PAYMENT_METHODS = ["PIX", "CARD", "CHECKOUT_PRO", "OTHER"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const COUPON_TYPES = ["FIXED", "PERCENTAGE"] as const;

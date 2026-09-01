@@ -23,6 +23,8 @@ export interface StartCheckoutResult {
   redirect: "sucesso" | "pendente" | "falha";
   orderId: string;
   pix?: { qrCode: string; qrCodeBase64: string; expiresAt: string };
+  /** Checkout Pro: URL da página de pagamento hospedada pelo Mercado Pago. */
+  redirectUrl?: string;
 }
 
 const orderIdSchema = z.string().uuid();
@@ -157,7 +159,12 @@ export async function startCheckout(input: {
       // cobrança nem reabrimos o rascunho depois de o provedor aceitar a primeira.
     }
   }
-  return { redirect: result.redirect, orderId: result.orderId, pix: result.pix };
+  return {
+    redirect: result.redirect,
+    orderId: result.orderId,
+    pix: result.pix,
+    redirectUrl: result.redirectUrl,
+  };
 }
 
 /** Simula a aprovação de um pagamento pendente — SOMENTE desenvolvimento. */

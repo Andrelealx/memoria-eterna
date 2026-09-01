@@ -44,14 +44,27 @@ export async function POST(req: Request): Promise<Response> {
   // Usa o mesmo recurso coberto pela assinatura, nunca outro ID arbitrário do body.
   const providerPaymentId = payloadDataId ?? queryDataId ?? "";
 
-  const payment = await prisma.payment.findUnique({ where: { providerPaymentId } });
-  if (!payment) {
-    // Pagamento desconhecido: ignora (não vaza existência).
-    return new Response("Not found", { status: 404 });
-  }
+  let payment = await prisma.payment.findUnique({ where: { providerPaymentId } });
+  let status;
 
-  // Consulta o status no provedor (fonte da verdade) antes de mudar o pedido.
-  const status = await provider.getPaymentStatus(providerPaymentId);
+  if (payment) {
+    // Consulta o status no provedor (fonte da verdade) antes de mudar o pedido.
+    status = await provider.getPaymentStatus(providerPaymentId);
+  } else {
+    // Checkout Pro: o evento traz o ID do pagamento real, mas salvamos o ID
+    // da preferência ao criar a cobrança. Busca os detalhes no provedor para
+    // achar o pedido pela external_reference e reconciliar o ID salvo.
+    const details = await provider.getPaymentDetails(providerPaymentId);
+    if (!details?.externalReference) {
+      return new Response("Not found", { status: 404 });
+    }
+    payment = await prisma.payment.findFirst({ where: { orderId: details.externalReference } });
+    if (!payment) {
+      return new Response("Not found", { status: 404 });
+    }
+    await prisma.payment.update({ where: { id: payment.id }, data: { providerPaymentId } });
+    status = details.status;
+  }
 
   if (status === "APPROVED") {
     await processPaymentApproved(payment.id, event.providerEventId);

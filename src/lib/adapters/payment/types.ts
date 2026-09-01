@@ -54,12 +54,24 @@ export interface WebhookSignatureInput {
   dataId?: string | null;
 }
 
+export interface PaymentDetails {
+  status: PaymentStatus;
+  /** external_reference enviado na criação — nosso Order.id. */
+  externalReference: string | null;
+}
+
 export interface PaymentProvider {
   readonly name: string;
   /** Cria uma intenção de pagamento no provedor. */
   createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
   /** Consulta o status atual no provedor (fonte da verdade). */
   getPaymentStatus(providerPaymentId: string): Promise<PaymentStatus>;
+  /**
+   * Detalhes completos de um pagamento, incluindo a external_reference.
+   * Necessário para reconciliar o Checkout Pro: o webhook chega com o ID do
+   * pagamento real, mas salvamos o ID da preferência ao criar a cobrança.
+   */
+  getPaymentDetails(providerPaymentId: string): Promise<PaymentDetails | null>;
   /** Valida a assinatura do webhook conforme a documentação oficial. */
   verifyWebhookSignature(input: WebhookSignatureInput): Promise<boolean>;
   /** Extrai um evento tipado a partir do corpo do webhook. */

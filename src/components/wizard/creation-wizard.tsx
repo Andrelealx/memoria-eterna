@@ -283,7 +283,7 @@ export function CreationWizard({
   const [email, setEmail] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [checkoutRecovered, setCheckoutRecovered] = useState(false);
-  const [method, setMethod] = useState<"PIX" | "CARD">("PIX");
+  const [method, setMethod] = useState<"PIX" | "CARD" | "CHECKOUT_PRO">("PIX");
   const cardFormRef = useRef<CardPaymentFormHandle>(null);
   const [address, setAddress] = useState<CheckoutAddress>(EMPTY_ADDRESS);
   const [shipping, setShipping] = useState<{
@@ -971,6 +971,41 @@ export function CreationWizard({
     setCheckoutError(message);
     checkoutActionErrorFocus();
     setBusy(false);
+  }
+
+  /** Checkout Pro: cria a preferência e leva a pessoa para a página de
+   * pagamento hospedada pelo Mercado Pago (Pix, cartão, boleto, saldo...). */
+  async function handleCheckoutProSubmit() {
+    if (!draftToken) return;
+    setBusy(true);
+    setError(null);
+    setFieldErrors({});
+    setCheckoutError(null);
+    try {
+      if (!checkoutIsValid()) return;
+      const saved = await persist();
+      if (!saved) return;
+      const res = await startCheckout({
+        draftToken,
+        planSlug,
+        email,
+        name: buyerName,
+        method: "CHECKOUT_PRO",
+        couponCode: activeCoupon?.code,
+        acceptedTerms: consent,
+        shippingAddress: selectedPlan.includesPhysical ? address : undefined,
+      });
+      if (res.redirectUrl) {
+        window.location.assign(res.redirectUrl);
+        return;
+      }
+      router.push(`/pagamento/${res.redirect}?order=${res.orderId}`);
+    } catch (e) {
+      setCheckoutError(friendlyError(e, "Falha ao iniciar o pagamento pelo Mercado Pago."));
+      checkoutActionErrorFocus();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function calculateShipping() {
@@ -2617,7 +2652,7 @@ export function CreationWizard({
 
                   <div>
                     <Label>Forma de pagamento</Label>
-                    <div className="mt-1.5 grid grid-cols-2 gap-3">
+                    <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <button
                         type="button"
                         onClick={() => {
@@ -2654,7 +2689,33 @@ export function CreationWizard({
                           Em até 12x
                         </span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMethod("CHECKOUT_PRO");
+                          setCheckoutError(null);
+                        }}
+                        className={cn(
+                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                          method === "CHECKOUT_PRO"
+                            ? "border-primary bg-card text-primary"
+                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                        )}
+                      >
+                        Continuar pelo Mercado Pago{" "}
+                        <span className="mt-1 block text-xs font-normal opacity-80">
+                          Pix, cartão, boleto e mais
+                        </span>
+                      </button>
                     </div>
+
+                    {method === "CHECKOUT_PRO" && (
+                      <p className="border-border bg-secondary/40 text-muted-foreground mt-4 rounded-xl border px-4 py-3 text-sm">
+                        Você vai continuar numa página segura do Mercado Pago, com todas as formas
+                        de pagamento que a sua conta aceitar. Depois de pagar, volta pra cá
+                        automaticamente.
+                      </p>
+                    )}
 
                     {method === "CARD" && (
                       <div className="border-border bg-card mt-4 rounded-2xl border p-4 sm:p-5">
@@ -2760,13 +2821,21 @@ export function CreationWizard({
               <Button
                 data-analytics="checkout_start"
                 data-analytics-label={selectedPlan.slug}
-                onClick={method === "PIX" ? handleCheckout : handleCardSubmit}
+                onClick={
+                  method === "PIX"
+                    ? handleCheckout
+                    : method === "CARD"
+                      ? handleCardSubmit
+                      : handleCheckoutProSubmit
+                }
                 disabled={busy || saving}
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {method === "PIX"
                   ? `Gerar Pix de ${formatBRL(checkoutTotalCents)}`
-                  : `Pagar ${formatBRL(checkoutTotalCents)} no cartão`}
+                  : method === "CARD"
+                    ? `Pagar ${formatBRL(checkoutTotalCents)} no cartão`
+                    : `Continuar pelo Mercado Pago`}
               </Button>
             )}
           </div>

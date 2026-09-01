@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type {
   CreatePaymentInput,
   CreatePaymentResult,
+  PaymentDetails,
   PaymentProvider,
   WebhookEvent,
   WebhookSignatureInput,
@@ -119,6 +120,10 @@ export class MercadoPagoProvider implements PaymentProvider {
     const token = this.requireCredentials();
     const notificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/mercado-pago`;
 
+    if (input.method === "CHECKOUT_PRO") {
+      return this.createCheckoutPreference(input, token, notificationUrl);
+    }
+
     let body: Record<string, unknown>;
     if (input.method === "CARD") {
       if (!input.card) {
@@ -191,14 +196,78 @@ export class MercadoPagoProvider implements PaymentProvider {
     return result;
   }
 
+  /**
+   * Checkout Pro: cria uma preferência e devolve a URL da página de pagamento
+   * hospedada pelo Mercado Pago (Pix, cartão, boleto, saldo em conta — tudo
+   * que a conta do comprador aceitar, sem precisarmos implementar cada um).
+   * A confirmação chega pelo mesmo webhook dos outros métodos.
+   */
+  private async createCheckoutPreference(
+    input: CreatePaymentInput,
+    token: string,
+    notificationUrl: string,
+  ): Promise<CreatePaymentResult> {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const body = {
+      items: [
+        {
+          title: input.description,
+          quantity: 1,
+          unit_price: input.amountCents / 100,
+          currency_id: "BRL",
+        },
+      ],
+      payer: { email: input.payer.email, name: input.payer.name },
+      external_reference: input.orderId,
+      notification_url: notificationUrl,
+      back_urls: {
+        success: `${appUrl}/pagamento/sucesso?order=${input.orderId}`,
+        pending: `${appUrl}/pagamento/pendente?order=${input.orderId}`,
+        failure: `${appUrl}/pagamento/falha?order=${input.orderId}`,
+      },
+      auto_return: "approved",
+    };
+
+    const res = await fetch(`${API_BASE}/checkout/preferences`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": input.idempotencyKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`[mercado_pago] falha ao criar preferência (${res.status}): ${text}`);
+    }
+
+    const data = (await res.json()) as { id?: string; init_point?: string };
+    if (!data.id || !data.init_point) {
+      throw new Error("[mercado_pago] preferência criada sem id/init_point.");
+    }
+
+    return { providerPaymentId: data.id, status: "PENDING", redirectUrl: data.init_point };
+  }
+
   async getPaymentStatus(providerPaymentId: string): Promise<PaymentStatus> {
+    const details = await this.getPaymentDetails(providerPaymentId);
+    return details?.status ?? "PENDING";
+  }
+
+  async getPaymentDetails(providerPaymentId: string): Promise<PaymentDetails | null> {
     const token = this.requireCredentials();
     const res = await fetch(`${API_BASE}/v1/payments/${providerPaymentId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.status === 404) return null;
     if (!res.ok) throw new Error(`[mercado_pago] falha ao consultar pagamento (${res.status})`);
-    const data = (await res.json()) as { status?: string };
-    return mapStatus(data.status ?? "pending");
+    const data = (await res.json()) as { status?: string; external_reference?: string | null };
+    return {
+      status: mapStatus(data.status ?? "pending"),
+      externalReference: data.external_reference ?? null,
+    };
   }
 
   async verifyWebhookSignature(input: WebhookSignatureInput): Promise<boolean> {

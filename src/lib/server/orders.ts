@@ -251,6 +251,8 @@ export interface InitiatePaymentResult {
   status: PaymentStatus;
   redirect: "sucesso" | "pendente" | "falha";
   pix?: { qrCode: string; qrCodeBase64: string; expiresAt: string };
+  /** Checkout Pro: URL da página de pagamento hospedada pelo Mercado Pago. */
+  redirectUrl?: string;
   orderId: string;
 }
 
@@ -473,7 +475,11 @@ export async function initiatePayment(
       providerPaymentId: result.providerPaymentId,
       method,
       status: result.status,
-      sanitizedPayload: pix ? { version: 1, type: "pix", pix } : { version: 1, type: "card" },
+      sanitizedPayload: pix
+        ? { version: 1, type: "pix", pix }
+        : method === "CHECKOUT_PRO"
+          ? { version: 1, type: "checkout_pro" }
+          : { version: 1, type: "card" },
     },
   });
 
@@ -489,6 +495,7 @@ export async function initiatePayment(
     status: "PENDING",
     redirect: "pendente",
     pix,
+    redirectUrl: result.redirectUrl,
     orderId: payment.orderId,
   };
 }

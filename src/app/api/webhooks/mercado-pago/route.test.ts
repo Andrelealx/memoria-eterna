@@ -4,7 +4,10 @@ const mocks = vi.hoisted(() => ({
   verifyWebhookSignature: vi.fn(),
   parseWebhookEvent: vi.fn(),
   getPaymentStatus: vi.fn(),
+  getPaymentDetails: vi.fn(),
   findPayment: vi.fn(),
+  findFirstPayment: vi.fn(),
+  updatePayment: vi.fn(),
   processPaymentApproved: vi.fn(),
   processPaymentFailed: vi.fn(),
 }));
@@ -15,6 +18,7 @@ vi.mock("@/lib/adapters/payment", () => ({
     verifyWebhookSignature: mocks.verifyWebhookSignature,
     parseWebhookEvent: mocks.parseWebhookEvent,
     getPaymentStatus: mocks.getPaymentStatus,
+    getPaymentDetails: mocks.getPaymentDetails,
   }),
 }));
 
@@ -22,6 +26,8 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     payment: {
       findUnique: mocks.findPayment,
+      findFirst: mocks.findFirstPayment,
+      update: mocks.updatePayment,
     },
   },
 }));
@@ -125,5 +131,57 @@ describe("POST /api/webhooks/mercado-pago", () => {
     expect(response.status).toBe(400);
     expect(mocks.verifyWebhookSignature).not.toHaveBeenCalled();
     expect(mocks.findPayment).not.toHaveBeenCalled();
+  });
+
+  describe("Checkout Pro (reconciliação por external_reference)", () => {
+    // O evento traz o ID do pagamento real, mas o Payment foi salvo com o ID
+    // da preferência (só existe ao criar a cobrança) — por isso a busca direta
+    // por providerPaymentId não acha nada e precisa cair no fallback.
+    beforeEach(() => {
+      mocks.findPayment.mockResolvedValue(null);
+    });
+
+    it("acha o pedido pela external_reference, reconcilia o ID e processa", async () => {
+      mocks.getPaymentDetails.mockResolvedValue({
+        status: "APPROVED",
+        externalReference: "order-abc",
+      });
+      mocks.findFirstPayment.mockResolvedValue({ id: "payment-db-id", orderId: "order-abc" });
+
+      const response = await POST(webhookRequest("real-payment-id", "real-payment-id"));
+
+      expect(response.status).toBe(200);
+      expect(mocks.getPaymentDetails).toHaveBeenCalledWith("real-payment-id");
+      expect(mocks.findFirstPayment).toHaveBeenCalledWith({ where: { orderId: "order-abc" } });
+      expect(mocks.updatePayment).toHaveBeenCalledWith({
+        where: { id: "payment-db-id" },
+        data: { providerPaymentId: "real-payment-id" },
+      });
+      expect(mocks.processPaymentApproved).toHaveBeenCalledWith("payment-db-id", "555");
+    });
+
+    it("responde 404 sem vazar existência quando não há external_reference", async () => {
+      mocks.getPaymentDetails.mockResolvedValue(null);
+
+      const response = await POST(webhookRequest("unknown-id", "unknown-id"));
+
+      expect(response.status).toBe(404);
+      expect(mocks.findFirstPayment).not.toHaveBeenCalled();
+      expect(mocks.processPaymentApproved).not.toHaveBeenCalled();
+    });
+
+    it("responde 404 quando a external_reference não corresponde a nenhum pedido", async () => {
+      mocks.getPaymentDetails.mockResolvedValue({
+        status: "APPROVED",
+        externalReference: "order-inexistente",
+      });
+      mocks.findFirstPayment.mockResolvedValue(null);
+
+      const response = await POST(webhookRequest("real-payment-id", "real-payment-id"));
+
+      expect(response.status).toBe(404);
+      expect(mocks.updatePayment).not.toHaveBeenCalled();
+      expect(mocks.processPaymentApproved).not.toHaveBeenCalled();
+    });
   });
 });

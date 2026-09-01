@@ -67,7 +67,7 @@ export const checkoutSchema = z
       .trim()
       .min(2, "Digite o seu nome com pelo menos 2 caracteres.")
       .max(120, "O nome pode ter até 120 caracteres."),
-    method: z.enum(["PIX", "CARD"], {
+    method: z.enum(["PIX", "CARD", "CHECKOUT_PRO"], {
       message: "Escolha uma forma de pagamento.",
     }),
     card: cardPaymentSchema.optional(),

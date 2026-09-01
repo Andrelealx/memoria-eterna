@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   CreatePaymentInput,
   CreatePaymentResult,
+  PaymentDetails,
   PaymentProvider,
   WebhookEvent,
 } from "./types";
@@ -39,6 +40,12 @@ export class FakePaymentProvider implements PaymentProvider {
 
   async getPaymentStatus(providerPaymentId: string): Promise<PaymentStatus> {
     return memory.get(providerPaymentId) ?? "PENDING";
+  }
+
+  async getPaymentDetails(providerPaymentId: string): Promise<PaymentDetails | null> {
+    const status = memory.get(providerPaymentId);
+    if (!status) return null;
+    return { status, externalReference: null };
   }
 
   /** Aprova manualmente um PIX pendente (útil no fluxo de desenvolvimento). */

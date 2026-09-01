@@ -114,6 +114,7 @@ enum CategoryStatus {
 enum PaymentMethod {
   PIX
   CARD
+  CHECKOUT_PRO
   OTHER
 }
 
