@@ -40,6 +40,7 @@ export async function transitionNfcTag(tagId: string, to: NfcTagStatus): Promise
 export async function transitionPhysicalOrder(
   physicalOrderId: string,
   to: PhysicalOrderStatus,
+  shipping?: { trackingCode?: string; carrier?: string },
 ): Promise<void> {
   const po = await prisma.physicalOrder.findUnique({
     where: { id: physicalOrderId },
@@ -61,6 +62,17 @@ export async function transitionPhysicalOrder(
   if (to === "PACKED" && !canPackPhysicalOrder(po.nfcTags[0]?.status ?? null)) {
     throw new Error("[nfc] Tag NFC não testada.");
   }
+  if (to === "SHIPPED" && !shipping?.trackingCode?.trim()) {
+    throw new Error("[nfc] Informe o código de rastreio para marcar como enviado.");
+  }
 
-  await prisma.physicalOrder.update({ where: { id: physicalOrderId }, data: { status: to } });
+  await prisma.physicalOrder.update({
+    where: { id: physicalOrderId },
+    data: {
+      status: to,
+      ...(to === "SHIPPED"
+        ? { trackingCode: shipping?.trackingCode?.trim(), carrier: shipping?.carrier?.trim() || null }
+        : {}),
+    },
+  });
 }

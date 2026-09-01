@@ -73,16 +73,17 @@ export async function adminSetTagDestination(tagId: string, destinationUrl: stri
 export async function adminTransitionPhysical(
   physicalOrderId: string,
   to: PhysicalOrderStatus,
+  shipping?: { trackingCode?: string; carrier?: string },
 ): Promise<{ ok: boolean }> {
   const user = await requireStaff();
-  await transitionPhysicalOrder(physicalOrderId, to);
+  await transitionPhysicalOrder(physicalOrderId, to, shipping);
   await writeAudit({
     actorId: user.id,
     actorRole: user.role,
     action: "physical.transition",
     entity: "physical_order",
     entityId: physicalOrderId,
-    after: { to },
+    after: { to, ...shipping },
   });
   return { ok: true };
 }
