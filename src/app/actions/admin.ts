@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createNfcTag, transitionNfcTag, transitionPhysicalOrder } from "@/lib/server/nfc";
@@ -88,6 +89,14 @@ export async function adminTransitionPhysical(
   return { ok: true };
 }
 
+// As páginas públicas que listam planos (home e /criar) são pré-renderizadas
+// estaticamente, então uma mudança no banco não aparece sozinha — é preciso
+// invalidar o cache dessas rotas a cada alteração de plano.
+function revalidatePublicPlanPages(): void {
+  revalidatePath("/");
+  revalidatePath("/criar");
+}
+
 export async function adminTogglePlan(planId: string, active: boolean): Promise<{ ok: boolean }> {
   const user = await requireStaff();
   await prisma.plan.update({ where: { id: planId }, data: { active } });
@@ -98,6 +107,7 @@ export async function adminTogglePlan(planId: string, active: boolean): Promise<
     entity: "plan",
     entityId: planId,
   });
+  revalidatePublicPlanPages();
   return { ok: true };
 }
 
@@ -113,6 +123,7 @@ export async function adminUpdatePlanPrice(planId: string, priceCents: number): 
     entityId: planId,
     after: { priceCents },
   });
+  revalidatePublicPlanPages();
   return { ok: true };
 }
 
@@ -146,6 +157,7 @@ export async function adminUpdatePlan(planId: string, input: UpdatePlanInput): P
     entityId: planId,
     after: patch,
   });
+  revalidatePublicPlanPages();
   return { ok: true };
 }
 
