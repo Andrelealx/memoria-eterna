@@ -1,15 +1,8 @@
 import Link from "next/link";
 import type { OrderStatus, PhysicalOrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { formatBRL } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import {
-  ORDER_STATUS_LABELS,
-  PAYMENT_STATUS_LABELS,
-  PHYSICAL_ORDER_LABELS,
-  formatDate,
-  statusVariant,
-} from "@/lib/labels";
+import { OrdersTable, type OrderRow } from "@/components/admin/orders-table";
+import { ORDER_STATUS_LABELS, PHYSICAL_ORDER_LABELS } from "@/lib/labels";
 
 export const metadata = { title: "Pedidos" };
 
@@ -46,6 +39,18 @@ export default async function AdminPedidosPage({
     take: PAGE_SIZE,
     include: { physicalOrder: true, payments: true },
   });
+
+  const rows: OrderRow[] = orders.map((o) => ({
+    id: o.id,
+    orderNumber: o.orderNumber,
+    createdAt: o.createdAt,
+    checkoutEmail: o.checkoutEmail,
+    total: o.total,
+    status: o.status,
+    payment: o.payments[0] ? { status: o.payments[0].status } : null,
+    physicalOrder: o.physicalOrder ? { status: o.physicalOrder.status } : null,
+    locked: o.status === "PAID" || o.payments.some((p) => p.status === "APPROVED"),
+  }));
 
   return (
     <div>
@@ -99,63 +104,15 @@ export default async function AdminPedidosPage({
         )}
       </form>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground">
-              <th className="py-2 pr-4">Pedido</th>
-              <th className="py-2 pr-4">Data</th>
-              <th className="py-2 pr-4">E-mail</th>
-              <th className="py-2 pr-4">Total</th>
-              <th className="py-2 pr-4">Status</th>
-              <th className="py-2 pr-4">Pagamento</th>
-              <th className="py-2 pr-4">Físico</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-b border-border">
-                <td className="py-2 pr-4">
-                  <Link href={`/admin/pedidos/${o.id}`} className="text-primary hover:underline">
-                    {o.orderNumber}
-                  </Link>
-                </td>
-                <td className="py-2 pr-4">{formatDate(o.createdAt)}</td>
-                <td className="py-2 pr-4 text-muted-foreground">{o.checkoutEmail ?? "—"}</td>
-                <td className="py-2 pr-4">{formatBRL(o.total)}</td>
-                <td className="py-2 pr-4">
-                  <Badge variant={statusVariant(o.status)}>
-                    {ORDER_STATUS_LABELS[o.status] ?? o.status}
-                  </Badge>
-                </td>
-                <td className="py-2 pr-4">
-                  {o.payments[0] ? (
-                    <Badge variant={statusVariant(o.payments[0].status)}>
-                      {PAYMENT_STATUS_LABELS[o.payments[0].status] ?? o.payments[0].status}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="py-2 pr-4">
-                  {o.physicalOrder ? (
-                    <Badge variant={statusVariant(o.physicalOrder.status)}>
-                      {PHYSICAL_ORDER_LABELS[o.physicalOrder.status] ?? o.physicalOrder.status}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {orders.length === 0 && (
+      <div className="mt-6">
+        {orders.length === 0 ? (
           <p className="mt-4 text-muted-foreground">
             {query || status || physicalStatus
               ? "Nenhum pedido encontrado com esse filtro."
               : "Nenhum pedido."}
           </p>
+        ) : (
+          <OrdersTable orders={rows} />
         )}
         {orders.length === PAGE_SIZE && (
           <p className="mt-4 text-xs text-muted-foreground">

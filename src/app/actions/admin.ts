@@ -310,3 +310,46 @@ export async function adminChangeRole(userId: string, role: Role): Promise<{ ok:
   });
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Exclusão de pedidos (limpeza de dados de teste)
+// ---------------------------------------------------------------------------
+
+/**
+ * Exclui pedidos permanentemente (cascata: itens, pagamentos, pedido físico,
+ * resgates de cupom — ver schema.prisma). Somente ADMIN, e nunca remove um
+ * pedido com pagamento aprovado, para não apagar histórico financeiro real
+ * por engano.
+ */
+export async function adminDeleteOrders(orderIds: string[]): Promise<{ deleted: number; skipped: number }> {
+  const user = await requireAdmin();
+  const ids = [...new Set(orderIds)].filter(Boolean);
+  if (ids.length === 0) return { deleted: 0, skipped: 0 };
+
+  const orders = await prisma.order.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, orderNumber: true, status: true, payments: { select: { status: true } } },
+  });
+
+  const deletable = orders.filter(
+    (o) => o.status !== "PAID" && !o.payments.some((p) => p.status === "APPROVED"),
+  );
+  const skipped = orders.length - deletable.length;
+
+  for (const order of deletable) {
+    await prisma.order.delete({ where: { id: order.id } });
+    await writeAudit({
+      actorId: user.id,
+      actorRole: user.role,
+      action: "order.delete",
+      entity: "order",
+      entityId: order.id,
+      before: { orderNumber: order.orderNumber, status: order.status },
+    });
+  }
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/falhas");
+  revalidatePath("/admin");
+  return { deleted: deletable.length, skipped };
+}
