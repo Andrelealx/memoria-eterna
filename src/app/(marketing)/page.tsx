@@ -7,6 +7,7 @@ import { NICHE_LABELS } from "@/lib/domain/templates";
 import { NICHES } from "@/lib/domain/enums";
 import { listActivePlans } from "@/lib/server/plans";
 import { listActiveTemplates } from "@/lib/server/templates";
+import { listActiveTestimonials, type TestimonialView } from "@/lib/server/testimonials";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -21,7 +22,11 @@ import { NumberTicker } from "@/components/ui/number-ticker";
 // com animações discretas de entrada e ambiência (padrões Origin UI / Cult UI).
 
 export default async function HomePage() {
-  const [plans, templates] = await Promise.all([listActivePlans(), listActiveTemplates()]);
+  const [plans, templates, testimonials] = await Promise.all([
+    listActivePlans(),
+    listActiveTemplates(),
+    listActiveTestimonials(),
+  ]);
   return (
     <>
       <Hero startingPrice={plans.length > 0 ? Math.min(...plans.map((plan) => plan.priceCents)) : null} />
@@ -29,6 +34,7 @@ export default async function HomePage() {
       <HowItWorks />
       <StatsStrip templateCount={templates.length} />
       <TemplatesSection />
+      <TestimonialsSection testimonials={testimonials} />
       <PhysicalSection />
       <PricingSection plans={plans} />
       <PrivacySection />
@@ -301,6 +307,75 @@ function TemplatesSection() {
           Ver todos os modelos
         </Link>
       </BlurFade>
+    </section>
+  );
+}
+
+function youtubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
+
+function TestimonialMedia({ testimonial }: { testimonial: TestimonialView }) {
+  if (testimonial.mediaType === "PHOTO" && testimonial.mediaUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={testimonial.mediaUrl}
+        alt={`Presente de ${testimonial.authorName}`}
+        className="aspect-video w-full rounded-2xl object-cover"
+      />
+    );
+  }
+  if (testimonial.mediaType === "VIDEO" && testimonial.mediaUrl) {
+    const embedUrl = youtubeEmbedUrl(testimonial.mediaUrl);
+    if (embedUrl) {
+      return (
+        <iframe
+          src={embedUrl}
+          title={`Depoimento de ${testimonial.authorName}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="aspect-video w-full rounded-2xl"
+        />
+      );
+    }
+    return (
+      <video src={testimonial.mediaUrl} controls className="aspect-video w-full rounded-2xl object-cover" />
+    );
+  }
+  return null;
+}
+
+function TestimonialsSection({ testimonials }: { testimonials: TestimonialView[] }) {
+  if (testimonials.length === 0) return null;
+  return (
+    <section className="border-y border-border bg-card">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <BlurFade>
+          <h2 className="text-center font-serif text-3xl md:text-4xl">Quem já presenteou</h2>
+        </BlurFade>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {testimonials.map((t, i) => (
+            <BlurFade key={t.id} delay={i * 0.08}>
+              <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-background p-5">
+                {t.mediaType !== "NONE" && t.mediaUrl && (
+                  <div className="mb-4 -mx-5 -mt-5">
+                    <TestimonialMedia testimonial={t} />
+                  </div>
+                )}
+                {t.quote && (
+                  <p className="flex-1 text-sm leading-6 text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+                )}
+                <div className="mt-4">
+                  <p className="font-medium text-foreground">{t.authorName}</p>
+                  {t.occasion && <p className="text-xs text-muted-foreground">{t.occasion}</p>}
+                </div>
+              </div>
+            </BlurFade>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

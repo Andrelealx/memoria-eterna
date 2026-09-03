@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/nfc", label: "NFC" },
   { href: "/admin/planos", label: "Planos" },
   { href: "/admin/templates", label: "Templates" },
+  { href: "/admin/depoimentos", label: "Depoimentos" },
   { href: "/admin/cupons", label: "Cupons" },
   { href: "/admin/denuncias", label: "Denúncias" },
   { href: "/admin/clientes", label: "Clientes" },

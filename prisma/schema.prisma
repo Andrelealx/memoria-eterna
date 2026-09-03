@@ -118,6 +118,12 @@ enum PaymentMethod {
   OTHER
 }
 
+enum TestimonialMediaType {
+  NONE
+  PHOTO
+  VIDEO
+}
+
 enum VersionState {
   DRAFT
   PUBLISHED
@@ -501,6 +507,25 @@ model CouponRedemption {
   @@index([couponId])
   @@index([orderId])
   @@map("coupon_redemptions")
+}
+
+// Depoimentos de clientes exibidos na home (seção de prova social). Mídia
+// (foto/vídeo) fica em storage público — diferente das fotos de projeto, que
+// são privadas — porque aparece numa página de marketing pré-renderizada.
+model Testimonial {
+  id        String               @id @default(uuid()) @db.Uuid
+  authorName String              @map("author_name")
+  occasion  String?
+  quote     String?
+  mediaType TestimonialMediaType @default(NONE) @map("media_type")
+  mediaUrl  String?              @map("media_url")
+  active    Boolean              @default(true)
+  order     Int                  @default(0)
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  @@index([active])
+  @@map("testimonials")
 }
 
 // ---------------------------------------------------------------------------
