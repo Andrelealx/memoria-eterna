@@ -68,14 +68,19 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
               </p>
             </BlurFade>
             <BlurFade delay={0.22}>
-              <p className="mt-5 font-serif text-2xl text-primary">
-                {startingPrice === null ? "Escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`}
-              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <p className="font-serif text-2xl text-primary">
+                  {startingPrice === null ? "Escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`}
+                </p>
+                <Badge className="gap-1 border-accent/40 bg-accent/15 text-accent">
+                  🔥 Preço de lançamento
+                </Badge>
+              </div>
             </BlurFade>
             <BlurFade delay={0.28}>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href="/criar" data-analytics="cta_click" data-analytics-label="hero_criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
-                  Criar meu presente agora
+                  Garantir meu presente agora
                 </Link>
                 <Link
                   href="/presente/demo-alex-e-dani"
@@ -88,7 +93,9 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
               </div>
             </BlurFade>
             <BlurFade delay={0.34}>
-              <p className="mt-5 text-sm text-muted-foreground">Pronto em poucos minutos.</p>
+              <p className="mt-5 text-sm text-muted-foreground">
+                Pronto em poucos minutos · preço de lançamento por tempo limitado
+              </p>
             </BlurFade>
           </div>
 
@@ -434,8 +441,10 @@ function PricingSection({ plans }: { plans: PlanDefinition[] }) {
     <section id="precos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
       {momento && (
         <BlurFade>
-          <div className="mx-auto mb-14 flex max-w-2xl flex-col items-center gap-4 rounded-3xl border border-primary/20 bg-primary/5 p-8 text-center">
-            <Heart className="h-6 w-6 text-primary" aria-hidden />
+          <div className="mx-auto mb-14 flex max-w-2xl flex-col items-center gap-4 rounded-3xl border border-accent/30 bg-primary/5 p-8 text-center shadow-[0_0_40px_-12px] shadow-accent/30">
+            <Badge className="gap-1 border-accent/40 bg-accent/15 text-accent">
+              🔥 Preço de lançamento
+            </Badge>
             <h2 className="font-serif text-2xl md:text-3xl">
               Seu presente por apenas {formatBRL(momento.priceCents)}
             </h2>
@@ -449,8 +458,9 @@ function PricingSection({ plans }: { plans: PlanDefinition[] }) {
               data-analytics-label="pricing_momento"
               className={buttonVariants({ variant: "shiny", size: "lg" })}
             >
-              Criar agora por {formatBRL(momento.priceCents)}
+              Garantir agora por {formatBRL(momento.priceCents)}
             </Link>
+            <p className="text-xs text-muted-foreground">Preço de lançamento por tempo limitado.</p>
           </div>
         </BlurFade>
       )}
