@@ -276,18 +276,11 @@ const NICHE_DESCRIPTIONS: Record<string, string> = {
 function TemplatesSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-      <h2 className="sr-only">Modelos para cada ocasião</h2>
       <BlurFade>
-        <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border shadow-sm">
-          <Image
-            src="/marketing/modelos-para-cada-ocasiao.png"
-            alt="Modelos para cada ocasião: escolha um estilo e personalize com fotos, mensagens e música."
-            width={1536}
-            height={1024}
-            className="h-auto w-full"
-            sizes="(min-width: 768px) 768px, 100vw"
-          />
-        </div>
+        <h2 className="text-center font-serif text-3xl md:text-4xl">Modelos para cada ocasião</h2>
+        <p className="mt-3 text-center text-muted-foreground">
+          Escolha o tema que mais combina com a sua história.
+        </p>
       </BlurFade>
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {NICHES.map((niche, i) => (
@@ -296,13 +289,11 @@ function TemplatesSection() {
               href={`/modelos?nicho=${niche}`}
               className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={`/marketing/niches/${niche}.png`}
                 alt={`${NICHE_LABELS[niche]} — ${NICHE_DESCRIPTIONS[niche]}`}
-                width={356}
-                height={388}
                 className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
               />
             </Link>
           </BlurFade>
