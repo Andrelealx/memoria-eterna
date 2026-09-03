@@ -52,35 +52,43 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
           <div>
             <BlurFade>
               <Badge variant="secondary" className="mb-5 gap-1.5 text-sm">
-                <Sparkles className="h-3.5 w-3.5" /> Uma surpresa feita por você
+                <Sparkles className="h-3.5 w-3.5" /> Presente digital personalizado
               </Badge>
             </BlurFade>
             <BlurFade delay={0.08}>
               <h1 className="font-serif text-4xl leading-tight text-foreground md:text-6xl">
-                Suas memórias em um{" "}
-                <AnimatedGradientText>presente que pode ser tocado</AnimatedGradientText>.
+                Crie um presente que vai fazer{" "}
+                <AnimatedGradientText>quem você ama se emocionar</AnimatedGradientText>.
               </h1>
             </BlurFade>
             <BlurFade delay={0.16}>
               <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
-                Crie uma página com fotos, mensagens e a história de vocês. Se quiser, conecte tudo a um
-                coração com NFC.
+                Uma página exclusiva com fotos, mensagens e a história de vocês — pronta em poucos
+                minutos.
               </p>
             </BlurFade>
-            <BlurFade delay={0.24}>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <BlurFade delay={0.22}>
+              <p className="mt-5 font-serif text-2xl text-primary">
+                {startingPrice === null ? "Escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`}
+              </p>
+            </BlurFade>
+            <BlurFade delay={0.28}>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href="/criar" data-analytics="cta_click" data-analytics-label="hero_criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
-                  Criar meu presente
+                  Criar meu presente agora
                 </Link>
-                <Link href="/#como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-                  Ver como funciona
+                <Link
+                  href="/presente/demo-alex-e-dani"
+                  data-analytics="cta_click"
+                  data-analytics-label="hero_exemplo"
+                  className={buttonVariants({ variant: "secondary", size: "lg" })}
+                >
+                  Ver um exemplo real
                 </Link>
               </div>
             </BlurFade>
-            <BlurFade delay={0.3}>
-              <p className="mt-5 text-sm text-muted-foreground">
-                {startingPrice === null ? "Monte agora e escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`} · Pronto em poucos minutos
-              </p>
+            <BlurFade delay={0.34}>
+              <p className="mt-5 text-sm text-muted-foreground">Pronto em poucos minutos.</p>
             </BlurFade>
           </div>
 
@@ -414,10 +422,33 @@ function PhysicalSection() {
 }
 
 function PricingSection({ plans }: { plans: PlanDefinition[] }) {
+  const momento = plans.find((p) => p.slug === "momento");
   return (
     <section id="precos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
+      {momento && (
+        <BlurFade>
+          <div className="mx-auto mb-14 flex max-w-2xl flex-col items-center gap-4 rounded-3xl border border-primary/20 bg-primary/5 p-8 text-center">
+            <Heart className="h-6 w-6 text-primary" aria-hidden />
+            <h2 className="font-serif text-2xl md:text-3xl">
+              Seu presente por apenas {formatBRL(momento.priceCents)}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Escolha o modelo, coloque as fotos, escreva a mensagem e escolha a música. Receba o link
+              pronto para compartilhar.
+            </p>
+            <Link
+              href="/criar"
+              data-analytics="cta_click"
+              data-analytics-label="pricing_momento"
+              className={buttonVariants({ variant: "shiny", size: "lg" })}
+            >
+              Criar agora por {formatBRL(momento.priceCents)}
+            </Link>
+          </div>
+        </BlurFade>
+      )}
       <BlurFade>
-        <h2 className="text-center font-serif text-3xl md:text-4xl">Escolha o seu presente</h2>
+        <h2 className="text-center font-serif text-3xl md:text-4xl">Ou escolha um plano completo</h2>
       </BlurFade>
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
         {plans.map((p, i) => {
