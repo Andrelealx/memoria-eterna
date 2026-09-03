@@ -38,7 +38,7 @@ export default async function HomePage() {
       <PhysicalSection />
       <PricingSection plans={plans} />
       <PrivacySection />
-      <FaqSection />
+      <FaqSection plans={plans} />
     </>
   );
 }
@@ -514,13 +514,18 @@ function PrivacySection() {
   );
 }
 
-function FaqSection() {
+function FaqSection({ plans }: { plans: PlanDefinition[] }) {
+  const momento = plans.find((p) => p.slug === "momento");
+  const momentoDays = momento?.durationDays ?? 7;
   const faqs = [
     { q: "Precisa saber criar site?", a: "Não. O assistente guia você passo a passo, sem conhecimento técnico." },
     { q: "Funciona em qualquer celular?", a: "Sim, em qualquer celular com navegador moderno. O link abre normalmente." },
     { q: "E se o celular não tiver NFC?", a: "Sem problema: o cartão acompanha um QR Code de contingência que abre a mesma página." },
     { q: "Posso editar depois?", a: "Nos planos Para Sempre e Kit Coração NFC, sim. O plano Momento permite fazer upgrade." },
-    { q: "Quanto tempo a página fica no ar?", a: "O plano Momento fica 7 dias após a ativação. Os demais ficam disponíveis enquanto o serviço operar." },
+    {
+      q: "Quanto tempo a página fica no ar?",
+      a: `O plano Momento fica ${momentoDays} dias após a ativação. Os demais ficam disponíveis enquanto o serviço operar.`,
+    },
     { q: "Posso usar qualquer música?", a: "Apenas músicas por link permitido do Spotify ou YouTube, respeitando os direitos autorais." },
     { q: "Quanto demora o envio do chaveiro?", a: "O prazo estimado é informado no checkout e você acompanha o status do pedido." },
   ];
