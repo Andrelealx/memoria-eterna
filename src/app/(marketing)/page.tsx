@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Heart, Link2, QrCode, Smartphone, Sparkles } from "lucide-react";
+import { Check, Heart, Link2, QrCode, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 import { cn, formatBRL } from "@/lib/utils";
 import type { PlanDefinition } from "@/lib/domain/plans";
 import { NICHE_LABELS } from "@/lib/domain/templates";
@@ -70,7 +70,7 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
             <BlurFade delay={0.22}>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <p className="font-serif text-2xl text-primary">
-                  {startingPrice === null ? "Escolha o plano no final" : `A partir de ${formatBRL(startingPrice)}`}
+                  {startingPrice === null ? "Escolha o plano no final" : `Por apenas ${formatBRL(startingPrice)}`}
                 </p>
                 <Badge className="gap-1 border-accent/40 bg-accent/15 text-accent">
                   🔥 Preço de lançamento
@@ -95,6 +95,10 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
             <BlurFade delay={0.34}>
               <p className="mt-5 text-sm text-muted-foreground">
                 Pronto em poucos minutos · preço de lançamento por tempo limitado
+              </p>
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 text-success" aria-hidden />
+                Pagamento seguro processado pelo Mercado Pago
               </p>
             </BlurFade>
           </div>
@@ -452,6 +456,10 @@ function PricingSection({ plans }: { plans: PlanDefinition[] }) {
               Garantir agora por {formatBRL(momento.priceCents)}
             </Link>
             <p className="text-xs text-muted-foreground">Preço de lançamento por tempo limitado.</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden />
+              Pagamento seguro processado pelo Mercado Pago
+            </p>
           </div>
         </BlurFade>
       )}
@@ -538,16 +546,38 @@ function planFeatures(plan: PlanDefinition): string[] {
 }
 
 function PrivacySection() {
+  const points = [
+    {
+      icon: ShieldCheck,
+      title: "Pagamento seguro",
+      text: "Processado pelo Mercado Pago, sem seus dados de cartão passando pelo nosso servidor.",
+    },
+    {
+      icon: Link2,
+      title: "Página privada",
+      text: "Pública apenas por link, não aparece em buscas internas.",
+    },
+    {
+      icon: Check,
+      title: "Você é o dono",
+      text: "As fotos são protegidas e podem ser excluídas a qualquer momento, a seu pedido.",
+    },
+  ];
   return (
     <section className="border-y border-border bg-card">
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <BlurFade>
-          <h2 className="font-serif text-2xl md:text-3xl">Segurança e privacidade</h2>
-          <p className="mt-4 text-muted-foreground">
-            Sua página é pública apenas por link e não aparece em buscas internas. As fotos são
-            protegidas e você, como proprietário, pode solicitar a exclusão a qualquer momento.
-          </p>
+          <h2 className="text-center font-serif text-2xl md:text-3xl">Segurança e privacidade</h2>
         </BlurFade>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {points.map((p, i) => (
+            <BlurFade key={p.title} delay={i * 0.08} className="text-center">
+              <p.icon className="mx-auto h-6 w-6 text-success" aria-hidden />
+              <p className="mt-3 font-medium">{p.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{p.text}</p>
+            </BlurFade>
+          ))}
+        </div>
       </div>
     </section>
   );
