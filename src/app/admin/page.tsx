@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
 import { PHYSICAL_ORDER_LABELS } from "@/lib/labels";
 import { StatCard } from "@/components/ui/stat-card";
+import { getMetricsSummary } from "@/lib/server/analytics-metrics";
 
 export const metadata = { title: "Admin" };
 
@@ -42,8 +43,10 @@ export default async function AdminDashboard() {
 
   const revenue = approvedAgg._sum.amount ?? 0;
   const paidOrders = await prisma.order.count({ where: { status: "PAID" } });
+  const metrics7d = await getMetricsSummary(7);
 
   const cards = [
+    { label: "Sessões (7 dias)", value: String(metrics7d.totalSessions), href: "/admin/metricas" },
     { label: "Pedidos hoje", value: String(ordersToday), href: "/admin/pedidos" },
     { label: "Pedidos (7 dias)", value: String(orders7d), href: "/admin/pedidos" },
     { label: "Pedidos (30 dias)", value: String(orders30d), href: "/admin/pedidos" },
