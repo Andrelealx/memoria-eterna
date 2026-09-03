@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // Prévia real do template: recorte da capa renderizada em /modelos/[slug]
@@ -19,13 +18,11 @@ export function TemplateThumbnail({
         compact ? "h-36 rounded-2xl" : "aspect-[4/5] rounded-[1.75rem]",
       )}
     >
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={`/marketing/templates/${slug}.png`}
         alt={`Prévia do modelo ${name}`}
-        width={480}
-        height={660}
         className="h-full w-full object-cover object-top"
-        sizes={compact ? "160px" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"}
       />
     </div>
   );

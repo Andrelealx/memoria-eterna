@@ -251,22 +251,21 @@ function HowItWorks() {
 }
 
 const STYLE_PREVIEWS = [
-  { slug: "romance-classico", label: "Clássico" },
-  { slug: "amor-minimalista", label: "Minimalista" },
-  { slug: "nossa-linha-do-tempo", label: "Linha do tempo" },
+  { slug: "romance-classico", label: "Romance" },
+  { slug: "nossa-familia", label: "Família" },
   { slug: "melhor-amigo", label: "Pet" },
+  { slug: "nosso-sim", label: "Casamento" },
 ];
 
 function StylePhoneMockup({ slug, label }: { slug: string; label: string }) {
   return (
     <div className="h-[360px] w-[180px] rounded-[2rem] bg-[#1c1719] p-2 shadow-lg ring-1 ring-black/10 transition-transform duration-300 group-hover:-translate-y-1">
       <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-background">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={`/marketing/style-preview/${slug}.png`}
           alt={`Prévia real do modelo ${label}`}
-          fill
-          sizes="180px"
-          className="object-cover object-top"
+          className="h-full w-full object-cover object-top"
         />
         <div className="absolute left-1/2 top-1.5 h-3 w-14 -translate-x-1/2 rounded-full bg-black/80" />
       </div>

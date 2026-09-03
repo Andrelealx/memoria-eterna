@@ -10,10 +10,10 @@ import path from "node:path";
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 
 const TEMPLATES = [
-  { slug: "romance-classico", label: "Clássico" },
-  { slug: "amor-minimalista", label: "Minimalista" },
-  { slug: "nossa-linha-do-tempo", label: "Linha do tempo" },
+  { slug: "romance-classico", label: "Romance" },
+  { slug: "nossa-familia", label: "Família" },
   { slug: "melhor-amigo", label: "Pet" },
+  { slug: "nosso-sim", label: "Casamento" },
 ];
 
 const OUT_DIR = path.resolve("public/marketing/style-preview");

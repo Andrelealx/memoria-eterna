@@ -119,14 +119,17 @@ function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
 }
 
 function demoPhotosFor(niche: Niche): PublicPhoto[] {
-  const coverByNiche: Partial<Record<Niche, string>> = {
-    pet: "/placeholders/pet.svg",
-    bebe: "/placeholders/bebe.svg",
-    aniversario: "/demo/aniversario-cover.jpg",
+  const coverByNiche: Record<Niche, string> = {
     romance: "/demo/romance-cover.jpg",
+    amizade: "/demo/amizade-cover.jpg",
+    familia: "/demo/familia-cover.jpg",
+    pet: "/demo/pet-cover.jpg",
+    aniversario: "/demo/aniversario-cover.jpg",
+    bebe: "/demo/bebe-cover.jpg",
+    casamento: "/demo/casamento-cover.jpg",
   };
   return [
-    { assetId: "p1", url: coverByNiche[niche] ?? "/placeholders/foto-1.svg", altText: "Imagem de demonstração da capa", position: 0, isCover: true },
+    { assetId: "p1", url: coverByNiche[niche], altText: "Imagem de demonstração da capa", position: 0, isCover: true },
     { assetId: "p2", url: "/placeholders/foto-2.svg", altText: "Imagem de demonstração botânica", position: 1, isCover: false },
     { assetId: "p3", url: "/placeholders/foto-3.svg", altText: "Imagem de demonstração de paisagem", position: 2, isCover: false },
   ];
