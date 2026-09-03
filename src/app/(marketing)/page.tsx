@@ -152,25 +152,16 @@ function PhoneMockup() {
   );
 }
 
+// Fotos reais dos chaveiros (produto físico do Kit Coração NFC), não um ícone
+// ilustrativo — o cliente vê exatamente o que recebe.
 function HeartKeychain() {
   return (
-    <svg viewBox="0 0 80 100" className="h-24 w-20" aria-hidden="true">
-      <circle cx="40" cy="14" r="6" fill="none" stroke="#C5A167" strokeWidth="2" />
-      <path
-        d="M40 20 L40 34"
-        stroke="#C5A167"
-        strokeWidth="2"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M40 34 C 22 28 16 48 24 58 C 30 66 40 70 40 70 C 40 70 50 66 56 58 C 64 48 58 28 40 34 Z"
-        fill="#722B45"
-        stroke="#4B1625"
-        strokeWidth="1.5"
-      />
-      <path d="M26 50 C 24 48 22 48 21 50" stroke="#FFF9F6" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.7" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/marketing/product/chaveiro-i-love-you.png"
+      alt="Chaveiro coração com NFC — modelo I Love You"
+      className="h-24 w-auto drop-shadow-xl"
+    />
   );
 }
 
@@ -413,9 +404,25 @@ function PhysicalSection() {
             ))}
           </ul>
         </BlurFade>
-        <div className="flex justify-center">
-          <HeartKeychain />
-        </div>
+        <BlurFade delay={0.1}>
+          <div className="flex flex-col items-center">
+            <div className="relative flex items-end justify-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/marketing/product/chaveiro-love.png"
+                alt="Chaveiro coração com NFC — modelo Love"
+                className="h-28 w-auto rotate-[-6deg] drop-shadow-xl"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/marketing/product/chaveiro-i-love-you.png"
+                alt="Chaveiro coração com NFC — modelo I Love You"
+                className="h-36 w-auto rotate-[4deg] drop-shadow-xl"
+              />
+            </div>
+            <p className="mt-4 text-xs text-creme/70">Modelos sortidos — fotos reais do produto.</p>
+          </div>
+        </BlurFade>
       </div>
     </section>
   );
