@@ -227,20 +227,50 @@ function HowItWorks() {
             </BlurFade>
           ))}
         </div>
-        <BlurFade delay={0.15} className="mt-12">
-          <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border shadow-sm">
-            <Image
-              src="/marketing/escolha-o-estilo.png"
-              alt="Escolha o estilo: vários templates para cada história, em telas de celular."
-              width={1536}
-              height={1024}
-              className="h-auto w-full"
-              sizes="(min-width: 768px) 768px, 100vw"
-            />
+        <BlurFade delay={0.15} className="mt-16">
+          <p className="text-center font-serif text-2xl md:text-3xl">Vários estilos para cada história</p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Prévias reais dos modelos — é exatamente isso que sua página vai parecer.
+          </p>
+          <div className="mt-10 flex gap-5 overflow-x-auto px-1 pb-4 sm:justify-center">
+            {STYLE_PREVIEWS.map((s, i) => (
+              <BlurFade key={s.slug} delay={0.2 + i * 0.08} className="shrink-0">
+                <Link href={`/modelos/${s.slug}`} className="group block">
+                  <StylePhoneMockup slug={s.slug} label={s.label} />
+                  <p className="mt-3 text-center text-sm font-medium text-foreground group-hover:text-primary">
+                    {s.label}
+                  </p>
+                </Link>
+              </BlurFade>
+            ))}
           </div>
         </BlurFade>
       </div>
     </section>
+  );
+}
+
+const STYLE_PREVIEWS = [
+  { slug: "romance-classico", label: "Clássico" },
+  { slug: "amor-minimalista", label: "Minimalista" },
+  { slug: "nossa-linha-do-tempo", label: "Linha do tempo" },
+  { slug: "melhor-amigo", label: "Pet" },
+];
+
+function StylePhoneMockup({ slug, label }: { slug: string; label: string }) {
+  return (
+    <div className="h-[360px] w-[180px] rounded-[2rem] bg-[#1c1719] p-2 shadow-lg ring-1 ring-black/10 transition-transform duration-300 group-hover:-translate-y-1">
+      <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-background">
+        <Image
+          src={`/marketing/style-preview/${slug}.png`}
+          alt={`Prévia real do modelo ${label}`}
+          fill
+          sizes="180px"
+          className="object-cover object-top"
+        />
+        <div className="absolute left-1/2 top-1.5 h-3 w-14 -translate-x-1/2 rounded-full bg-black/80" />
+      </div>
+    </div>
   );
 }
 
