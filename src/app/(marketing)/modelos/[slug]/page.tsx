@@ -130,8 +130,8 @@ function demoPhotosFor(niche: Niche): PublicPhoto[] {
   };
   return [
     { assetId: "p1", url: coverByNiche[niche], altText: "Imagem de demonstração da capa", position: 0, isCover: true },
-    { assetId: "p2", url: "/placeholders/foto-2.svg", altText: "Imagem de demonstração botânica", position: 1, isCover: false },
-    { assetId: "p3", url: "/placeholders/foto-3.svg", altText: "Imagem de demonstração de paisagem", position: 2, isCover: false },
+    { assetId: "p2", url: `/demo/${niche}-2.jpg`, altText: "Imagem de demonstração da galeria", position: 1, isCover: false },
+    { assetId: "p3", url: `/demo/${niche}-3.jpg`, altText: "Imagem de demonstração da galeria", position: 2, isCover: false },
   ];
 }
 
