@@ -122,7 +122,7 @@ function demoPhotosFor(niche: Niche): PublicPhoto[] {
   const coverByNiche: Partial<Record<Niche, string>> = {
     pet: "/placeholders/pet.svg",
     bebe: "/placeholders/bebe.svg",
-    aniversario: "/placeholders/festa.svg",
+    aniversario: "/demo/aniversario-cover.jpg",
     romance: "/demo/romance-cover.jpg",
   };
   return [
