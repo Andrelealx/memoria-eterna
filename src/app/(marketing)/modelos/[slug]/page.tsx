@@ -99,8 +99,22 @@ const DEMOS: Record<Niche, Demo> = {
   },
 };
 
+// Música de demonstração por nicho — embed oficial do YouTube (mesmo
+// mecanismo do produto real: só embed, sem autoplay). Escolhida pelo clima
+// de cada ocasião, não pelo conteúdo fictício em si.
+const DEMO_MUSIC: Record<Niche, { id: string; label: string }> = {
+  romance: { id: "2Vv-BfVoq4g", label: "Perfect — Ed Sheeran" },
+  amizade: { id: "6k8cpUkKK4c", label: "Count on Me — Bruno Mars" },
+  familia: { id: "rBrd_3VMC3c", label: "What a Wonderful World — Louis Armstrong" },
+  pet: { id: "ZbZSe6N_BXs", label: "Happy — Pharrell Williams" },
+  aniversario: { id: "3GwjfUFyY6M", label: "Celebration — Kool & The Gang" },
+  bebe: { id: "av5AAjdJzXc", label: "You Are My Sunshine (lullaby)" },
+  casamento: { id: "rtOvBOTyX00", label: "A Thousand Years — Christina Perri" },
+};
+
 function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
   const demo = DEMOS[niche];
+  const track = DEMO_MUSIC[niche];
   return {
     schemaVersion: 1,
     niche,
@@ -112,7 +126,12 @@ function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
     counterEnabled: demo.counterEnabled ?? false,
     photos: [],
     moments: demo.moments,
-    music: null,
+    music: {
+      provider: "youtube",
+      kind: "video",
+      id: track.id,
+      embedUrl: `https://www.youtube.com/embed/${track.id}`,
+    },
     finalPhrase: demo.finalPhrase ?? "",
     colorScheme,
   };
