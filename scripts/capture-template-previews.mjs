@@ -2,6 +2,7 @@
 // templates renderizados em /modelos/[slug], usadas como imagens de card e
 // no mockup do celular da home. Requer o servidor dev rodando em :3000.
 import { chromium } from "playwright";
+import sharp from "sharp";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -46,10 +47,10 @@ async function main() {
     await root.waitFor({ state: "visible" });
     await cardPage.waitForTimeout(400); // animações de entrada (blur-fade)
     const box = await root.boundingBox();
-    await cardPage.screenshot({
-      path: path.join(OUT_DIR, `${slug}.png`),
+    const shot = await cardPage.screenshot({
       clip: { x: box.x, y: box.y, width: 480, height: 660 },
     });
+    await sharp(shot).webp({ quality: 82, effort: 6 }).toFile(path.join(OUT_DIR, `${slug}.webp`));
     console.log("card ok:", slug);
   }
   await cardPage.close();
@@ -63,10 +64,12 @@ async function main() {
   await heroRoot.waitFor({ state: "visible" });
   await heroPage.waitForTimeout(400);
   const heroBox = await heroRoot.boundingBox();
-  await heroPage.screenshot({
-    path: path.resolve("public/marketing/hero-preview.png"),
+  const heroShot = await heroPage.screenshot({
     clip: { x: heroBox.x, y: heroBox.y, width: 360, height: 800 },
   });
+  await sharp(heroShot)
+    .webp({ quality: 82, effort: 6 })
+    .toFile(path.resolve("public/marketing/hero-preview.webp"));
   console.log("hero ok");
   await heroPage.close();
 

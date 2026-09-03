@@ -4,6 +4,7 @@
 // para um conjunto curado e diverso de templates. Requer o servidor dev
 // rodando em :3000.
 import { chromium } from "playwright";
+import sharp from "sharp";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -29,10 +30,10 @@ async function main() {
     await root.waitFor({ state: "visible" });
     await page.waitForTimeout(400);
     const box = await root.boundingBox();
-    await page.screenshot({
-      path: path.join(OUT_DIR, `${slug}.png`),
+    const shot = await page.screenshot({
       clip: { x: box.x, y: box.y, width: 360, height: 800 },
     });
+    await sharp(shot).webp({ quality: 82, effort: 6 }).toFile(path.join(OUT_DIR, `${slug}.webp`));
     console.log("ok:", slug);
   }
 

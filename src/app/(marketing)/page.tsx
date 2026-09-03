@@ -50,24 +50,24 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
       <Spotlight className="mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 md:pt-20">
         <div className="grid items-center gap-12 md:grid-cols-2">
           <div>
-            <BlurFade>
+            <BlurFade duration={0.35}>
               <Badge variant="secondary" className="mb-5 gap-1.5 text-sm">
                 <Sparkles className="h-3.5 w-3.5" /> Presente digital personalizado
               </Badge>
             </BlurFade>
-            <BlurFade delay={0.08}>
+            <BlurFade delay={0.04} duration={0.35}>
               <h1 className="font-serif text-4xl leading-tight text-foreground md:text-6xl">
                 Crie um presente que vai fazer{" "}
                 <AnimatedGradientText>quem você ama se emocionar</AnimatedGradientText>.
               </h1>
             </BlurFade>
-            <BlurFade delay={0.16}>
+            <BlurFade delay={0.08} duration={0.35}>
               <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
                 Uma página exclusiva com fotos, mensagens e a história de vocês — pronta em poucos
                 minutos.
               </p>
             </BlurFade>
-            <BlurFade delay={0.22}>
+            <BlurFade delay={0.12} duration={0.35}>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <p className="font-serif text-2xl text-primary">
                   {startingPrice === null ? "Escolha o plano no final" : `Por apenas ${formatBRL(startingPrice)}`}
@@ -77,7 +77,7 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
                 </Badge>
               </div>
             </BlurFade>
-            <BlurFade delay={0.28}>
+            <BlurFade delay={0.16} duration={0.35}>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href="/criar" data-analytics="cta_click" data-analytics-label="hero_criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
                   Garantir meu presente agora
@@ -92,13 +92,14 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
                 </Link>
               </div>
             </BlurFade>
-            <BlurFade delay={0.34}>
-              <p className="mt-5 text-sm text-muted-foreground">
-                Pronto em poucos minutos · preço de lançamento por tempo limitado
-              </p>
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <ShieldCheck className="h-4 w-4 text-success" aria-hidden />
-                Pagamento seguro processado pelo Mercado Pago
+            <BlurFade delay={0.2} duration={0.35}>
+              <p className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <span>Pronto em poucos minutos</span>
+                <span aria-hidden className="hidden sm:inline">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-success" aria-hidden />
+                  Pagamento seguro pelo Mercado Pago
+                </span>
               </p>
             </BlurFade>
           </div>
@@ -147,7 +148,7 @@ function PhoneMockup() {
     <div className="h-[460px] w-[230px] rounded-[2.5rem] bg-[#1c1719] p-[10px] shadow-xl ring-1 ring-black/10">
       <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-background">
         <Image
-          src="/marketing/hero-preview.png"
+          src="/marketing/hero-preview.webp"
           alt="Prévia do modelo Romance Clássico: capa com Alex &amp; Dani."
           fill
           sizes="230px"
@@ -169,7 +170,7 @@ function HeartKeychain() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/marketing/product/chaveiro-i-love-you.png"
+      src="/marketing/product/chaveiro-i-love-you.webp"
       alt="Chaveiro coração com NFC — modelo I Love You"
       className="h-24 w-auto drop-shadow-xl"
     />
@@ -232,18 +233,29 @@ function HowItWorks() {
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Prévias reais dos modelos — é exatamente isso que sua página vai parecer.
           </p>
-          <div className="mt-10 flex gap-5 overflow-x-auto px-1 pb-4 sm:justify-center">
-            {STYLE_PREVIEWS.map((s, i) => (
-              <BlurFade key={s.slug} delay={0.2 + i * 0.08} className="shrink-0">
-                <Link href={`/modelos/${s.slug}`} className="group block">
-                  <StylePhoneMockup slug={s.slug} label={s.label} />
-                  <p className="mt-3 text-center text-sm font-medium text-foreground group-hover:text-primary">
-                    {s.label}
-                  </p>
-                </Link>
-              </BlurFade>
-            ))}
+          {/* Rola na horizontal no celular: a borda esvanecida à direita avisa
+              que há mais modelos além do que cabe na tela. */}
+          <div className="relative mt-10">
+            <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-1 pb-4 sm:justify-center">
+              {STYLE_PREVIEWS.map((s, i) => (
+                <BlurFade key={s.slug} delay={0.2 + i * 0.08} className="shrink-0 snap-center">
+                  <Link href={`/modelos/${s.slug}`} className="group block">
+                    <StylePhoneMockup slug={s.slug} label={s.label} />
+                    <p className="mt-3 text-center text-sm font-medium text-foreground group-hover:text-primary">
+                      {s.label}
+                    </p>
+                  </Link>
+                </BlurFade>
+              ))}
+            </div>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-card to-transparent sm:hidden"
+            />
           </div>
+          <p className="text-center text-xs text-muted-foreground sm:hidden">
+            Arraste para o lado para ver todos
+          </p>
         </BlurFade>
       </div>
     </section>
@@ -263,8 +275,10 @@ function StylePhoneMockup({ slug, label }: { slug: string; label: string }) {
       <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-background">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/marketing/style-preview/${slug}.png`}
+          src={`/marketing/style-preview/${slug}.webp`}
           alt={`Prévia real do modelo ${label}`}
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover object-top"
         />
         <div className="absolute left-1/2 top-1.5 h-3 w-14 -translate-x-1/2 rounded-full bg-black/80" />
@@ -324,8 +338,10 @@ function TemplatesSection() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/marketing/niches/${niche}.png`}
+                src={`/marketing/niches/${niche}.webp`}
                 alt={`${NICHE_LABELS[niche]} — ${NICHE_DESCRIPTIONS[niche]}`}
+                loading="lazy"
+                decoding="async"
                 className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
             </Link>
@@ -440,14 +456,18 @@ function PhysicalSection() {
             <div className="relative flex items-end justify-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/marketing/product/chaveiro-love.png"
+                src="/marketing/product/chaveiro-love.webp"
                 alt="Chaveiro coração com NFC — modelo Love"
+                loading="lazy"
+                decoding="async"
                 className="h-28 w-auto rotate-[-6deg] drop-shadow-xl"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/marketing/product/chaveiro-i-love-you.png"
+                src="/marketing/product/chaveiro-i-love-you.webp"
                 alt="Chaveiro coração com NFC — modelo I Love You"
+                loading="lazy"
+                decoding="async"
                 className="h-36 w-auto rotate-[4deg] drop-shadow-xl"
               />
             </div>

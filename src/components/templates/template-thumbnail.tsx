@@ -20,8 +20,10 @@ export function TemplateThumbnail({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/marketing/templates/${slug}.png`}
+        src={`/marketing/templates/${slug}.webp`}
         alt={`Prévia do modelo ${name}`}
+        loading="lazy"
+        decoding="async"
         className="h-full w-full object-cover object-top"
       />
     </div>
