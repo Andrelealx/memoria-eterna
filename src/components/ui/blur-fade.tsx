@@ -9,7 +9,6 @@ interface BlurFadeProps {
   delay?: number;
   yOffset?: number;
   duration?: number;
-  blur?: string;
 }
 
 export function BlurFade({
@@ -18,13 +17,11 @@ export function BlurFade({
   delay = 0,
   yOffset = 16,
   duration = 0.5,
-  blur = "8px",
 }: BlurFadeProps) {
   const style = {
     "--blur-fade-delay": `${delay}s`,
     "--blur-fade-duration": `${duration}s`,
     "--blur-fade-y": `${yOffset}px`,
-    "--blur-fade-blur": blur,
   } as React.CSSProperties;
   return (
     <div className={cn("blur-fade", className)} style={style}>
