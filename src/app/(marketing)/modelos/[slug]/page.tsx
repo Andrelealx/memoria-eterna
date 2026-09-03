@@ -99,22 +99,31 @@ const DEMOS: Record<Niche, Demo> = {
   },
 };
 
-// Música de demonstração por nicho — embed oficial do YouTube (mesmo
-// mecanismo do produto real: só embed, sem autoplay). Escolhida pelo clima
-// de cada ocasião, não pelo conteúdo fictício em si.
-const DEMO_MUSIC: Record<Niche, { id: string; label: string }> = {
-  romance: { id: "2Vv-BfVoq4g", label: "Perfect — Ed Sheeran" },
-  amizade: { id: "6k8cpUkKK4c", label: "Count on Me — Bruno Mars" },
-  familia: { id: "rBrd_3VMC3c", label: "What a Wonderful World — Louis Armstrong" },
-  pet: { id: "ZbZSe6N_BXs", label: "Happy — Pharrell Williams" },
-  aniversario: { id: "3GwjfUFyY6M", label: "Celebration — Kool & The Gang" },
-  bebe: { id: "av5AAjdJzXc", label: "You Are My Sunshine (lullaby)" },
-  casamento: { id: "rtOvBOTyX00", label: "A Thousand Years — Christina Perri" },
+// Música de demonstração por nicho — embed oficial (YouTube ou Spotify, mesmo
+// mecanismo do produto real). Escolhida pelo clima de cada ocasião, não pelo
+// conteúdo fictício em si. Dois nichos usam Spotify de propósito, para provar
+// que os dois provedores funcionam na prática, não só o YouTube.
+type DemoTrack =
+  | { provider: "youtube"; id: string; label: string }
+  | { provider: "spotify"; id: string; label: string };
+
+const DEMO_MUSIC: Record<Niche, DemoTrack> = {
+  romance: { provider: "youtube", id: "2Vv-BfVoq4g", label: "Perfect — Ed Sheeran" },
+  amizade: { provider: "spotify", id: "7l1qvxWjxcKpB9PCtBuTbU", label: "Count on Me — Bruno Mars" },
+  familia: { provider: "youtube", id: "rBrd_3VMC3c", label: "What a Wonderful World — Louis Armstrong" },
+  pet: { provider: "youtube", id: "ZbZSe6N_BXs", label: "Happy — Pharrell Williams" },
+  aniversario: { provider: "youtube", id: "3GwjfUFyY6M", label: "Celebration — Kool & The Gang" },
+  bebe: { provider: "youtube", id: "av5AAjdJzXc", label: "You Are My Sunshine (lullaby)" },
+  casamento: { provider: "spotify", id: "7CiHyxVJbIYIBtvZK6uEyt", label: "A Thousand Years — Christina Perri" },
 };
 
 function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
   const demo = DEMOS[niche];
   const track = DEMO_MUSIC[niche];
+  const music: ProjectContent["music"] =
+    track.provider === "youtube"
+      ? { provider: "youtube", kind: "video", id: track.id, embedUrl: `https://www.youtube.com/embed/${track.id}` }
+      : { provider: "spotify", kind: "track", id: track.id, embedUrl: `https://open.spotify.com/embed/track/${track.id}` };
   return {
     schemaVersion: 1,
     niche,
@@ -126,12 +135,7 @@ function demoContentFor(niche: Niche, colorScheme: string): ProjectContent {
     counterEnabled: demo.counterEnabled ?? false,
     photos: [],
     moments: demo.moments,
-    music: {
-      provider: "youtube",
-      kind: "video",
-      id: track.id,
-      embedUrl: `https://www.youtube.com/embed/${track.id}`,
-    },
+    music,
     finalPhrase: demo.finalPhrase ?? "",
     colorScheme,
   };
