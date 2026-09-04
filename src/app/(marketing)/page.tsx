@@ -99,7 +99,7 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
                   Garantir meu presente agora
                 </Link>
                 <Link
-                  href="/presente/demo-alex-e-dani"
+                  href="/presente/manuelly-andre"
                   data-analytics="cta_click"
                   data-analytics-label="hero_exemplo"
                   className={buttonVariants({ variant: "secondary", size: "lg" })}
