@@ -319,8 +319,10 @@ export async function adminChangeRole(userId: string, role: Role): Promise<{ ok:
 /**
  * Exclui pedidos permanentemente (cascata: itens, pagamentos, pedido físico,
  * resgates de cupom — ver schema.prisma). Somente ADMIN, e nunca remove um
- * pedido com pagamento aprovado, para não apagar histórico financeiro real
- * por engano.
+ * pedido com pagamento aprovado de verdade, para não apagar histórico
+ * financeiro real por engano. Pagamento do provedor "fake" (dados de
+ * demonstração semeados no banco) não conta como dinheiro real e não trava
+ * a exclusão.
  */
 export async function adminDeleteOrders(orderIds: string[]): Promise<{ deleted: number; skipped: number }> {
   const user = await requireAdmin();
@@ -329,12 +331,17 @@ export async function adminDeleteOrders(orderIds: string[]): Promise<{ deleted: 
 
   const orders = await prisma.order.findMany({
     where: { id: { in: ids } },
-    select: { id: true, orderNumber: true, status: true, payments: { select: { status: true } } },
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      payments: { select: { status: true, provider: true } },
+    },
   });
 
-  const deletable = orders.filter(
-    (o) => o.status !== "PAID" && !o.payments.some((p) => p.status === "APPROVED"),
-  );
+  const hasRealApprovedPayment = (o: (typeof orders)[number]) =>
+    o.payments.some((p) => p.status === "APPROVED" && p.provider !== "fake");
+  const deletable = orders.filter((o) => !hasRealApprovedPayment(o));
   const skipped = orders.length - deletable.length;
 
   for (const order of deletable) {

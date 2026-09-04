@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Lock } from "lucide-react";
 import { adminDeleteOrders } from "@/app/actions/admin";
 import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,13 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
 
   return (
     <div>
+      {selectableIds.length === 0 && orders.length > 0 && (
+        <p className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Todos os pedidos listados têm pagamento aprovado e por isso estão protegidos contra
+          exclusão.
+        </p>
+      )}
       {selected.size > 0 && (
         <div className="mb-3 flex items-center justify-between rounded-xl border border-error/30 bg-error/5 px-4 py-2 text-sm">
           <span>{selected.size} pedido(s) selecionado(s)</span>
@@ -107,14 +115,23 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
             {orders.map((o) => (
               <tr key={o.id} className="border-b border-border">
                 <td className="py-2 pr-4">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(o.id)}
-                    onChange={() => toggle(o.id)}
-                    disabled={o.locked}
-                    aria-label={`Selecionar pedido ${o.orderNumber}`}
-                    title={o.locked ? "Pedido pago — não pode ser excluído" : undefined}
-                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(o.id)}
+                      onChange={() => toggle(o.id)}
+                      disabled={o.locked}
+                      aria-label={`Selecionar pedido ${o.orderNumber}`}
+                    />
+                    {o.locked && (
+                      <span title="Pedido pago — protegido contra exclusão">
+                        <Lock
+                          aria-label="Pedido pago — protegido contra exclusão"
+                          className="h-3.5 w-3.5 text-muted-foreground"
+                        />
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="py-2 pr-4">
                   <Link href={`/admin/pedidos/${o.id}`} className="text-primary hover:underline">

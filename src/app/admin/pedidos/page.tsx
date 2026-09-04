@@ -49,7 +49,11 @@ export default async function AdminPedidosPage({
     status: o.status,
     payment: o.payments[0] ? { status: o.payments[0].status } : null,
     physicalOrder: o.physicalOrder ? { status: o.physicalOrder.status } : null,
-    locked: o.status === "PAID" || o.payments.some((p) => p.status === "APPROVED"),
+    // Só trava exclusão quando existe dinheiro real por trás — pagamento do
+    // provedor "fake" é dado de demonstração semeado no banco, nunca foi
+    // cobrado de ninguém. A regra de verdade mora em adminDeleteOrders; isto
+    // aqui só evita mostrar um checkbox habilitado que o servidor recusaria.
+    locked: o.payments.some((p) => p.status === "APPROVED" && p.provider !== "fake"),
   }));
 
   return (
