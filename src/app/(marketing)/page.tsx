@@ -79,8 +79,8 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
             </BlurFade>
             <BlurFade delay={0.08} duration={0.35}>
               <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
-                Uma página exclusiva com fotos, mensagens e a história de vocês — pronta em poucos
-                minutos.
+                Você envia as fotos e conta a história de vocês. A gente transforma tudo em um
+                presente pronto para emocionar quem você ama.
               </p>
             </BlurFade>
             <BlurFade delay={0.12} duration={0.35}>
@@ -141,7 +141,7 @@ function HeroVisual() {
           <FloatingTag label="Nossa história" />
         </div>
         <div className="absolute -bottom-4 left-6 animate-float [animation-delay:3s] md:left-10">
-          <FloatingTag label="NFC" />
+          <FloatingTag label="Toque e revele" />
         </div>
       </div>
       <div className="absolute -right-2 bottom-2 md:-right-8">
@@ -198,9 +198,9 @@ const MARQUEE_ITEMS = [
   "Mensagens",
   "Linha do tempo",
   "Música do Spotify ou YouTube",
-  "Link personalizado",
-  "NFC no coração",
-  "QR de contingência",
+  "Endereço com o nome de vocês",
+  "Chaveiro que abre com um toque",
+  "Sempre acessível",
   "Privacidade",
 ];
 
@@ -221,9 +221,9 @@ function MarqueeStrip() {
 
 function HowItWorks() {
   const steps = [
-    { n: "1", title: "Escolha o estilo", text: "Selecione um template que combine com a ocasião." },
+    { n: "1", title: "Escolha um estilo", text: "Um modelo que combine com a ocasião e com a história de vocês." },
     { n: "2", title: "Conte a história de vocês", text: "Adicione fotos, datas, mensagens e uma música." },
-    { n: "3", title: "Envie o link ou presenteie com NFC", text: "Compartilhe pelo WhatsApp ou aproxime o coração do celular." },
+    { n: "3", title: "Entregue e emocione", text: "Mande pelo WhatsApp, ou entregue o coração físico — é só aproximar do celular para abrir." },
   ];
   return (
     <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-card">
@@ -247,7 +247,7 @@ function HowItWorks() {
         <BlurFade delay={0.15} className="mt-16">
           <p className="text-center font-serif text-2xl md:text-3xl">Vários estilos para cada história</p>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Prévias reais dos modelos — é exatamente isso que sua página vai parecer.
+            Prévias reais dos modelos — é exatamente isso que seu presente vai parecer.
           </p>
           {/* Rola na horizontal no celular: a borda esvanecida à direita avisa
               que há mais modelos além do que cabe na tela. */}
@@ -468,9 +468,9 @@ function TestimonialsSection({ testimonials }: { testimonials: TestimonialView[]
 
 function PhysicalSection() {
   const benefits = [
-    { icon: Smartphone, title: "NFC oculto", text: "A tecnologia fica escondida dentro da peça." },
-    { icon: Link2, title: "Link atualizável", text: "O destino pode ser trocado sem regravar a tag." },
-    { icon: QrCode, title: "QR de segurança", text: "QR Code de contingência no cartão que acompanha." },
+    { icon: Smartphone, title: "Discreto", text: "Por fora é só um coração. A tecnologia mora escondida dentro dele." },
+    { icon: Link2, title: "Sempre atualizado", text: "Mudou algo na história? O coração continua abrindo a versão mais recente." },
+    { icon: QrCode, title: "Nunca fica sem acesso", text: "Se o celular não ler o toque, um QR Code no cartão abre a mesma página." },
   ];
   return (
     <section className="bg-primary-dark text-creme">
@@ -533,8 +533,8 @@ function PricingSection({ plans }: { plans: PlanDefinition[] }) {
               Seu presente por apenas {formatBRL(momento.priceCents)}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Escolha o modelo, coloque as fotos, escreva a mensagem e escolha a música. Receba o link
-              pronto para compartilhar.
+              Escolha o modelo, coloque as fotos, escreva a mensagem e escolha a música. Pronto para
+              presentear no mesmo dia.
             </p>
             <Link
               href="/criar"
@@ -621,8 +621,8 @@ function planFeatures(plan: PlanDefinition): string[] {
           ? [`Linha do tempo com ${plan.limits.maxMoments} momentos`]
           : []),
         "1 modelo à sua escolha",
-        "Nomes, mensagem e contador",
-        "Link pronto para compartilhar",
+        "Mensagem personalizada e contador de dias",
+        "Pronto para enviar no WhatsApp",
       ];
     case "para-sempre":
       return [
@@ -632,11 +632,11 @@ function planFeatures(plan: PlanDefinition): string[] {
           ? [`Linha do tempo com ${plan.limits.maxMoments} momentos`]
           : []),
         "Música do Spotify ou YouTube",
-        "Link personalizado",
-        "Edição posterior",
+        "Endereço com o nome de vocês",
+        "Pode editar depois, sempre que quiser",
       ];
     case "kit-coracao-nfc":
-      return ["Tudo do Para Sempre", "Chaveiro coração com NFC", "Cartão com QR de contingência", "Embalagem protegida", "Acompanhamento do pedido"];
+      return ["Tudo do Para Sempre", "Chaveiro coração que abre com um toque", "Cartão com acesso garantido, mesmo sem NFC", "Embalagem protegida", "Acompanhamento do pedido"];
     default:
       return [];
   }
@@ -651,8 +651,8 @@ function PrivacySection() {
     },
     {
       icon: Link2,
-      title: "Página privada",
-      text: "Pública apenas por link, não aparece em buscas internas.",
+      title: "Só quem tem o link vê",
+      text: "Seu presente não aparece em buscas nem é indexado por ninguém.",
     },
     {
       icon: Check,
@@ -686,7 +686,7 @@ function FaqSection({ plans }: { plans: PlanDefinition[] }) {
   const faqs = [
     { q: "Precisa saber criar site?", a: "Não. O assistente guia você passo a passo, sem conhecimento técnico." },
     { q: "Funciona em qualquer celular?", a: "Sim, em qualquer celular com navegador moderno. O link abre normalmente." },
-    { q: "E se o celular não tiver NFC?", a: "Sem problema: o cartão acompanha um QR Code de contingência que abre a mesma página." },
+    { q: "E se o celular não tiver NFC?", a: "Sem problema: o cartão acompanha um QR Code reserva que abre o mesmo presente." },
     { q: "Posso editar depois?", a: "Nos planos Para Sempre e Kit Coração NFC, sim. O plano Momento permite fazer upgrade." },
     {
       q: "Quanto tempo a página fica no ar?",
