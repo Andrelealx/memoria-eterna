@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
+import { ReconcilePaymentButton } from "@/components/admin/reconcile-payment-button";
 import { PHYSICAL_ORDER_TRANSITIONS } from "@/lib/domain/state-machine";
 import {
   NFC_TAG_LABELS,
@@ -87,7 +88,12 @@ export default async function AdminPedidoPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="mt-4 rounded-3xl border border-border bg-card p-6">
-        <h2 className="font-serif text-xl">Pagamento</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="font-serif text-xl">Pagamento</h2>
+          {order.payments.some((p) => p.status === "PENDING" || p.status === "CREATED") && (
+            <ReconcilePaymentButton orderId={order.id} />
+          )}
+        </div>
         {order.payments.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">Nenhuma cobrança criada ainda.</p>
         ) : (
