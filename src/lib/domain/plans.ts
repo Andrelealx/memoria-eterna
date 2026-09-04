@@ -45,7 +45,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     order: 1,
     limits: {
       maxPhotos: 5,
-      maxMoments: 0,
+      maxMoments: 5,
       customSlug: false,
       musicEmbed: false,
       editAfterPublish: false,

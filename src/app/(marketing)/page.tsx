@@ -614,6 +614,12 @@ function planFeatures(plan: PlanDefinition): string[] {
       return [
         `${plan.durationDays ?? 7} dias no ar`,
         `Até ${plan.limits.maxPhotos} fotos`,
+        // Só entra na lista se o plano realmente permitir momentos — assim o
+        // texto acompanha o limite configurado no painel em vez de prometer
+        // uma linha do tempo que o plano não tem.
+        ...(plan.limits.maxMoments > 0
+          ? [`Linha do tempo com ${plan.limits.maxMoments} momentos`]
+          : []),
         "1 modelo à sua escolha",
         "Nomes, mensagem e contador",
         "Link pronto para compartilhar",
@@ -622,7 +628,9 @@ function planFeatures(plan: PlanDefinition): string[] {
       return [
         "Sem data de expiração",
         `Até ${plan.limits.maxPhotos} fotos`,
-        `Linha do tempo com ${plan.limits.maxMoments} momentos`,
+        ...(plan.limits.maxMoments > 0
+          ? [`Linha do tempo com ${plan.limits.maxMoments} momentos`]
+          : []),
         "Música do Spotify ou YouTube",
         "Link personalizado",
         "Edição posterior",
