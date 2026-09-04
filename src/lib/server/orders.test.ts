@@ -21,6 +21,7 @@ const db = vi.hoisted(() => {
 
 const paymentProvider = vi.hoisted(() => ({
   createPayment: vi.fn(),
+  getPaymentStatus: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -159,6 +160,44 @@ describe("getPendingPaymentSnapshot", () => {
   it("não consulta o banco para identificadores inválidos", async () => {
     await expect(getPendingPaymentSnapshot("not-an-order", draftToken)).resolves.toBeNull();
     expect(db.payment.findFirst).not.toHaveBeenCalled();
+  });
+
+  // Regressão do pedido PV-2026-000004: o webhook do provedor nunca chegou e o
+  // pedido ficou preso em "aguardando pagamento" mesmo já pago, porque a tela
+  // só relia o banco local. A consulta precisa chegar até o provedor.
+  it("pergunta o status ao provedor quando o pagamento ainda está pendente aqui", async () => {
+    db.payment.findFirst.mockResolvedValue({
+      id: "payment-id",
+      status: "PENDING",
+      method: "PIX",
+      providerPaymentId: "177171554468",
+      sanitizedPayload: { version: 1, type: "pix", pix },
+      order: { project: { draftToken } },
+    });
+    paymentProvider.getPaymentStatus.mockResolvedValue("PENDING");
+
+    await expect(getPendingPaymentSnapshot(orderId, draftToken)).resolves.toEqual({
+      status: "pending",
+      pix,
+    });
+    expect(paymentProvider.getPaymentStatus).toHaveBeenCalledWith("177171554468");
+  });
+
+  it("mantém a tela de pé quando a consulta ao provedor falha", async () => {
+    db.payment.findFirst.mockResolvedValue({
+      id: "payment-id",
+      status: "PENDING",
+      method: "PIX",
+      providerPaymentId: "999999999999",
+      sanitizedPayload: { version: 1, type: "pix", pix },
+      order: { project: { draftToken } },
+    });
+    paymentProvider.getPaymentStatus.mockRejectedValue(new Error("provedor fora do ar"));
+
+    await expect(getPendingPaymentSnapshot(orderId, draftToken)).resolves.toEqual({
+      status: "pending",
+      pix,
+    });
   });
 });
 

@@ -3,6 +3,7 @@ import type { PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { ReconcilePaymentButton } from "@/components/admin/reconcile-payment-button";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -145,6 +146,7 @@ export default async function AdminFalhasPage({
               <th className="py-2 pr-4">Valor</th>
               <th className="py-2 pr-4">Status do pedido</th>
               <th className="py-2 pr-4">Última tentativa</th>
+              <th className="py-2 pr-4">Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -171,6 +173,9 @@ export default async function AdminFalhasPage({
                   ) : (
                     "sem tentativa"
                   )}
+                </td>
+                <td className="py-2 pr-4">
+                  <ReconcilePaymentButton orderId={o.id} />
                 </td>
               </tr>
             ))}

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createNfcTag, transitionNfcTag, transitionPhysicalOrder } from "@/lib/server/nfc";
 import { writeAudit } from "@/lib/server/audit";
+import { reconcilePendingPayment } from "@/lib/server/orders";
 import { normalizeCouponCode } from "@/lib/domain/coupons";
 import type { CouponType, NfcTagStatus, PhysicalOrderStatus, Role } from "@/lib/domain/enums";
 
@@ -352,4 +353,39 @@ export async function adminDeleteOrders(orderIds: string[]): Promise<{ deleted: 
   revalidatePath("/admin/falhas");
   revalidatePath("/admin");
   return { deleted: deletable.length, skipped };
+}
+
+/**
+ * Reconsulta no provedor todos os pagamentos ainda pendentes de um pedido e
+ * aplica o resultado. Serve para destravar pedido cujo webhook não chegou —
+ * o status vem do Mercado Pago, nunca de um clique aqui.
+ */
+export async function adminReconcileOrderPayment(
+  orderId: string,
+): Promise<{ checked: number; status: string }> {
+  const user = await requireAdmin();
+
+  const payments = await prisma.payment.findMany({
+    where: { orderId, status: { in: ["PENDING", "CREATED"] }, providerPaymentId: { not: null } },
+    select: { id: true },
+  });
+
+  let final = "sem pagamento pendente";
+  for (const payment of payments) {
+    final = await reconcilePendingPayment(payment.id, { force: true });
+  }
+
+  await writeAudit({
+    actorId: user.id,
+    actorRole: user.role,
+    action: "payment.reconcile",
+    entity: "order",
+    entityId: orderId,
+    after: { checked: payments.length, status: final },
+  });
+
+  revalidatePath("/admin/falhas");
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath("/admin/pedidos");
+  return { checked: payments.length, status: final };
 }

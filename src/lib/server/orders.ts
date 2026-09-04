@@ -290,6 +290,89 @@ function sameSecret(left: string, right: string): boolean {
   return timingSafeEqual(leftHash, rightHash);
 }
 
+// Throttle da consulta ao provedor, por pagamento. A tela de Pix pergunta a
+// cada 4s; sem isso, cada comprador parado na página viraria uma consulta ao
+// Mercado Pago a cada 4 segundos. O Map vive por instância — no pior caso
+// consultamos um pouco mais que o intervalo, o que é inofensivo.
+const lastRemoteCheck = new Map<string, number>();
+const REMOTE_CHECK_INTERVAL_MS = 10_000;
+
+function shouldAskProvider(providerPaymentId: string): boolean {
+  const now = Date.now();
+  const previous = lastRemoteCheck.get(providerPaymentId) ?? 0;
+  if (now - previous < REMOTE_CHECK_INTERVAL_MS) return false;
+  lastRemoteCheck.set(providerPaymentId, now);
+  // Evita crescer sem limite em instâncias de vida longa.
+  if (lastRemoteCheck.size > 500) {
+    for (const [key, at] of lastRemoteCheck) {
+      if (now - at > 10 * 60_000) lastRemoteCheck.delete(key);
+    }
+  }
+  return true;
+}
+
+/**
+ * Pergunta o status ao provedor e aplica o resultado, para pagamentos que ainda
+ * constam como pendentes aqui.
+ *
+ * O webhook continua sendo o caminho principal, mas ele pode simplesmente não
+ * chegar (queda de rede do provedor, redirect na URL de notificação, timeout).
+ * Quando isso acontece sem esta rede de segurança, o pedido fica preso em
+ * AWAITING_PAYMENT para sempre, mesmo com o dinheiro já pago — foi o que
+ * aconteceu com o pedido PV-2026-000004.
+ *
+ * Retorna o status corrente depois da tentativa. Nunca lança: uma falha de
+ * consulta não pode derrubar a tela do comprador.
+ */
+export async function reconcilePendingPayment(
+  paymentId: string,
+  options: { force?: boolean } = {},
+): Promise<PaymentStatus> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, status: true, providerPaymentId: true },
+  });
+  if (!payment) return "PENDING";
+  return reconcilePaymentRecord(payment, options);
+}
+
+/**
+ * Mesma reconciliação, a partir de um registro já carregado. Evita uma segunda
+ * consulta ao banco na tela de Pix, que roda a cada 4 segundos.
+ */
+async function reconcilePaymentRecord(
+  payment: { id: string; status: PaymentStatus; providerPaymentId: string | null },
+  options: { force?: boolean } = {},
+): Promise<PaymentStatus> {
+  if (payment.status !== "PENDING" && payment.status !== "CREATED") return payment.status;
+  if (!payment.providerPaymentId) return payment.status;
+  if (!options.force && !shouldAskProvider(payment.providerPaymentId)) return payment.status;
+
+  let remoteStatus: PaymentStatus;
+  try {
+    remoteStatus = await getPaymentProvider().getPaymentStatus(payment.providerPaymentId);
+  } catch (cause) {
+    console.error("[payment] Falha ao reconsultar pagamento no provedor.", {
+      paymentId: payment.id,
+      cause: cause instanceof Error ? cause.message : String(cause),
+    });
+    return payment.status;
+  }
+
+  if (remoteStatus === "APPROVED") {
+    // O ID do evento marca a origem: assim uma confirmação vinda daqui não
+    // colide com a do webhook, e a idempotência de processPaymentApproved
+    // impede que as duas publiquem o presente em dobro.
+    await processPaymentApproved(payment.id, `reconcile:${payment.providerPaymentId}`);
+    return "APPROVED";
+  }
+  if (isRecoverablePaymentFailure(remoteStatus)) {
+    await processPaymentFailed(payment.id, remoteStatus);
+    return remoteStatus;
+  }
+  return payment.status;
+}
+
 /**
  * Retorna somente o estado e os dados de exibição do Pix para quem possui o
  * token secreto do rascunho que originou o pedido. O UUID do pedido, sozinho,
@@ -310,8 +393,10 @@ export async function getPendingPaymentSnapshot(
     where: { orderId },
     orderBy: { createdAt: "desc" },
     select: {
+      id: true,
       status: true,
       method: true,
+      providerPaymentId: true,
       sanitizedPayload: true,
       order: { select: { project: { select: { draftToken: true } } } },
     },
@@ -319,8 +404,21 @@ export async function getPendingPaymentSnapshot(
   const storedDraftToken = payment?.order.project?.draftToken;
   if (!payment || !storedDraftToken || !sameSecret(draftToken, storedDraftToken)) return null;
 
-  if (payment.status === "APPROVED") return { status: "approved", pix: null };
-  if (["REJECTED", "CANCELLED", "REFUNDED", "CHARGEDBACK"].includes(payment.status)) {
+  // Só o banco local não basta: ele depende do webhook, que pode nunca chegar.
+  // Enquanto o comprador estiver olhando a tela, perguntamos ao provedor.
+  // Uma falha aqui nunca pode derrubar a tela — no pior caso segue "pendente".
+  let status: PaymentStatus = payment.status;
+  try {
+    status = await reconcilePaymentRecord(payment);
+  } catch (cause) {
+    console.error("[payment] Reconciliação falhou na tela de pagamento.", {
+      paymentId: payment.id,
+      cause: cause instanceof Error ? cause.message : String(cause),
+    });
+  }
+
+  if (status === "APPROVED") return { status: "approved", pix: null };
+  if (["REJECTED", "CANCELLED", "REFUNDED", "CHARGEDBACK"].includes(status)) {
     return { status: "failed", pix: null };
   }
 

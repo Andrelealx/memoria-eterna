@@ -4,11 +4,34 @@ import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PAYMENT_STATUS_LABELS, formatDate, statusVariant } from "@/lib/labels";
+import { reconcilePendingPayment } from "@/lib/server/orders";
 
 export const metadata = { title: "Meus pedidos" };
+export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
   const user = await requireUser();
+
+  // Quem pagou e fechou a aba antes da confirmação volta por aqui. Se o webhook
+  // não chegou, o pedido continuaria "aguardando pagamento" para sempre — então
+  // reconsultamos o provedor antes de montar a lista.
+  const stuck = await prisma.payment.findMany({
+    where: {
+      status: { in: ["PENDING", "CREATED"] },
+      providerPaymentId: { not: null },
+      order: { customerId: user.id, status: { in: ["CREATED", "AWAITING_PAYMENT"] } },
+    },
+    select: { id: true },
+    take: 10,
+  });
+  for (const payment of stuck) {
+    try {
+      await reconcilePendingPayment(payment.id, { force: true });
+    } catch {
+      // A listagem não pode quebrar por causa de uma consulta ao provedor.
+    }
+  }
+
   const orders = await prisma.order.findMany({
     where: { customerId: user.id },
     orderBy: { createdAt: "desc" },
