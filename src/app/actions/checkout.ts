@@ -8,7 +8,9 @@ import {
   initiatePayment,
   processPaymentApproved,
   processPaymentFailed,
+  regeneratePixWithDraftToken,
   type PendingPixData,
+  type RegeneratePixResult,
 } from "@/lib/server/orders";
 import type { PaymentMethod } from "@/lib/domain/enums";
 import { z } from "zod";
@@ -186,6 +188,24 @@ export async function approveOrderPayment(orderId: string): Promise<{ ok: boolea
   await processPaymentApproved(payment.id, `dev_${payment.id}_${Date.now()}`);
   await clearPaymentAccessCookie(parsed.data);
   return { ok: true };
+}
+
+/**
+ * Gera um Pix novo para quem está na tela de pagamento sem estar logado —
+ * a prova de que o pedido é dela é o mesmo cookie HttpOnly do checkout.
+ * Usada quando o código anterior expira (seção "Não pague este código").
+ */
+export async function regeneratePixOnPendingScreen(orderId: string): Promise<RegeneratePixResult> {
+  const parsed = orderIdSchema.safeParse(orderId);
+  if (!parsed.success) return { status: "unavailable" };
+
+  const draftToken = await readPaymentAccessToken(parsed.data);
+  if (!draftToken) return { status: "unavailable" };
+
+  const result = await regeneratePixWithDraftToken(parsed.data, draftToken);
+  if (!result) return { status: "unavailable" };
+  if (result.status !== "pending") await clearPaymentAccessCookie(parsed.data);
+  return result;
 }
 
 export async function getOrderPaymentStatus(

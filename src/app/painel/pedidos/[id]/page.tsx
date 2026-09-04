@@ -3,8 +3,11 @@ import { requireUser } from "@/lib/auth/require-auth";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
 import { PAYMENT_STATUS_LABELS, PHYSICAL_ORDER_LABELS, formatDate } from "@/lib/labels";
+import { readStoredPix } from "@/lib/server/orders";
+import { RegeneratePix } from "@/components/painel/regenerate-pix";
 
 export const metadata = { title: "Pedido" };
+export const dynamic = "force-dynamic";
 
 export default async function PedidoPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -12,12 +15,21 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
 
   const order = await prisma.order.findFirst({
     where: { id, customerId: user.id },
-    include: { items: { include: { plan: true } }, payments: true, physicalOrder: true },
+    include: {
+      items: { include: { plan: true } },
+      payments: { orderBy: { createdAt: "desc" } },
+      physicalOrder: true,
+    },
   });
   if (!order) notFound();
 
+  // A mais recente: depois de gerar um novo Pix, pode existir mais de uma
+  // tentativa de pagamento para o mesmo pedido.
   const payment = order.payments[0];
   const physical = order.physicalOrder;
+  const isPendingPayment = payment?.status === "PENDING" || payment?.status === "CREATED";
+  const currentPix =
+    isPendingPayment && payment.method === "PIX" ? readStoredPix(payment.sanitizedPayload) : null;
 
   return (
     <div>
@@ -54,6 +66,7 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
           <p className="mt-1 font-medium">
             {payment ? PAYMENT_STATUS_LABELS[payment.status] ?? payment.status : "—"}
           </p>
+          {isPendingPayment && <RegeneratePix orderId={order.id} initialPix={currentPix} />}
         </div>
         {physical && (
           <div className="rounded-3xl border border-border bg-card p-6">

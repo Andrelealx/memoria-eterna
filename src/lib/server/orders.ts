@@ -284,6 +284,12 @@ const storedPaymentPayloadSchema = z.object({
   pix: pixDataSchema,
 });
 
+/** Lê o DTO de Pix salvo em `Payment.sanitizedPayload`, se houver um válido. */
+export function readStoredPix(sanitizedPayload: unknown): PendingPixData | null {
+  const parsed = storedPaymentPayloadSchema.safeParse(sanitizedPayload);
+  return parsed.success ? parsed.data.pix : null;
+}
+
 function sameSecret(left: string, right: string): boolean {
   const leftHash = Buffer.from(hashToken(left), "hex");
   const rightHash = Buffer.from(hashToken(right), "hex");
@@ -425,6 +431,131 @@ export async function getPendingPaymentSnapshot(
   if (payment.method !== "PIX") return { status: "pending", pix: null };
   const parsedPayload = storedPaymentPayloadSchema.safeParse(payment.sanitizedPayload);
   return { status: "pending", pix: parsedPayload.success ? parsedPayload.data.pix : null };
+}
+
+// Uma pessoa pode clicar "gerar novo Pix" várias vezes seguidas (dedo
+// escorregou, achou que não funcionou). Sem isso, cada clique vira uma nova
+// cobrança de verdade criada no Mercado Pago.
+const lastRegenerateAt = new Map<string, number>();
+const REGENERATE_COOLDOWN_MS = 20_000;
+
+export interface RegeneratePixResult {
+  status: "approved" | "pending" | "unavailable";
+  pix?: PendingPixData;
+}
+
+/**
+ * Gera uma nova cobrança Pix para um pedido que ainda está aguardando
+ * pagamento — o código anterior pode ter expirado, ou a pessoa simplesmente
+ * perdeu o Pix e não tinha como recuperá-lo (é o que aconteceu no pedido
+ * PV-2026-000004: o comprador ficou sem opção nenhuma além de "esperar").
+ *
+ * Antes de criar uma cobrança nova, sempre reconsulta a mais recente no
+ * provedor — se ela já tiver sido aprovada nesse meio-tempo, não faz sentido
+ * (e seria arriscado) gerar outra.
+ */
+async function regeneratePendingPixPayment(orderId: string): Promise<RegeneratePixResult> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      status: true,
+      total: true,
+      checkoutEmail: true,
+      customer: { select: { name: true } },
+      payments: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { id: true, status: true, providerPaymentId: true },
+      },
+    },
+  });
+  if (!order) return { status: "unavailable" };
+  if (order.status === "PAID") return { status: "approved" };
+  if (order.status !== "CREATED" && order.status !== "AWAITING_PAYMENT") {
+    return { status: "unavailable" };
+  }
+
+  const latest = order.payments[0];
+  if (latest) {
+    const reconciled = await reconcilePaymentRecord(latest, { force: true });
+    if (reconciled === "APPROVED") return { status: "approved" };
+  }
+
+  const now = Date.now();
+  const lastAttempt = lastRegenerateAt.get(orderId) ?? 0;
+  if (now - lastAttempt < REGENERATE_COOLDOWN_MS) {
+    throw new Error("[payment] Aguarde alguns segundos antes de gerar um novo Pix.");
+  }
+  lastRegenerateAt.set(orderId, now);
+
+  if (!order.checkoutEmail) {
+    throw new Error("[payment] Este pedido não tem um e-mail de cobrança válido.");
+  }
+
+  const payment = await prisma.payment.create({
+    data: {
+      orderId: order.id,
+      provider: "mercado_pago",
+      idempotencyKey: generateIdempotencyKey(),
+      method: "OTHER",
+      status: "CREATED",
+      amount: order.total,
+    },
+  });
+
+  const result = await initiatePayment(
+    payment.id,
+    "PIX",
+    order.checkoutEmail,
+    order.customer?.name ?? undefined,
+  );
+
+  if (result.status === "APPROVED") return { status: "approved" };
+  if (result.pix) return { status: "pending", pix: result.pix };
+  return { status: "unavailable" };
+}
+
+/**
+ * Versão para quem está no fluxo anônimo de checkout (token do rascunho em
+ * cookie HttpOnly) — a mesma prova de acesso usada por getPendingPaymentSnapshot.
+ */
+export async function regeneratePixWithDraftToken(
+  orderId: string,
+  draftToken: string,
+): Promise<RegeneratePixResult | null> {
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId) ||
+    !/^[A-Za-z0-9_-]{20,128}$/.test(draftToken)
+  ) {
+    return null;
+  }
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { project: { select: { draftToken: true } } },
+  });
+  const storedDraftToken = order?.project?.draftToken;
+  if (!storedDraftToken || !sameSecret(draftToken, storedDraftToken)) return null;
+  return regeneratePendingPixPayment(orderId);
+}
+
+/**
+ * Versão para quem está autenticado em /painel — dispensa o cookie do
+ * checkout, então funciona em qualquer aparelho onde a pessoa faça login,
+ * não só naquele em que o Pix foi gerado originalmente.
+ */
+export async function regeneratePixForCustomer(
+  orderId: string,
+  customerId: string,
+): Promise<RegeneratePixResult> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { customerId: true },
+  });
+  if (!order || order.customerId !== customerId) {
+    throw new Error("[payment] Pedido não encontrado.");
+  }
+  return regeneratePendingPixPayment(orderId);
 }
 
 /**

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Check, Copy, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
-import { approveOrderPayment, getOrderPaymentStatus } from "@/app/actions/checkout";
+import {
+  approveOrderPayment,
+  getOrderPaymentStatus,
+  regeneratePixOnPendingScreen,
+} from "@/app/actions/checkout";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { PaymentFrame } from "@/components/checkout/payment-frame";
 
@@ -43,6 +47,7 @@ export function PendingPayment({ orderId }: { orderId: string }) {
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
   const [pix, setPix] = useState<PixData | null>(null);
   const [pixExpired, setPixExpired] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -179,6 +184,38 @@ export function PendingPayment({ orderId }: { orderId: string }) {
     }
   }
 
+  async function regenerate() {
+    setRegenerating(true);
+    setError(null);
+    try {
+      const result = await regeneratePixOnPendingScreen(orderId);
+      if (result.status === "approved") {
+        try {
+          sessionStorage.removeItem(`presente-vivo:pix:${orderId}`);
+        } catch {
+          // A navegação não depende do cache local.
+        }
+        router.replace(`/pagamento/sucesso?order=${orderId}`);
+        return;
+      }
+      if (result.status === "pending" && result.pix) {
+        setPix(result.pix);
+        setPixExpired(new Date(result.pix.expiresAt).getTime() <= Date.now());
+        try {
+          sessionStorage.setItem(`presente-vivo:pix:${orderId}`, JSON.stringify(result.pix));
+        } catch {
+          // O Pix já está em memória; persistência local é opcional.
+        }
+      } else {
+        setError("Não foi possível gerar um novo Pix agora. Tente novamente em instantes.");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível gerar um novo Pix.");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   async function approve() {
     setBusy(true);
     setError(null);
@@ -304,14 +341,25 @@ export function PendingPayment({ orderId }: { orderId: string }) {
                 <div className="bg-error/10 mt-4 rounded-2xl p-4 text-sm leading-6">
                   <p className="font-medium">Não pague este código.</p>
                   <p className="text-muted-foreground mt-1">
-                    Antes de gerar outra cobrança, confirme se o banco não registrou este pagamento.
+                    Se você já pagou, não gere outro — estamos verificando a confirmação
+                    automaticamente. Se ainda não pagou, pode gerar um Pix novo abaixo.
                   </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={regenerate}
+                    disabled={regenerating}
+                    className="mt-3 w-full"
+                  >
+                    <RefreshCw aria-hidden className={regenerating ? "animate-spin" : ""} />
+                    {regenerating ? "Gerando novo Pix…" : "Gerar novo Pix"}
+                  </Button>
                   <Link
                     href="/ajuda"
                     className={buttonVariants({
                       variant: "secondary",
                       size: "sm",
-                      className: "mt-3 w-full",
+                      className: "mt-2 w-full",
                     })}
                   >
                     Ver orientações de pagamento
