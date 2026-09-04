@@ -269,7 +269,13 @@ export function CreationWizard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [resuming, setResuming] = useState(true);
+  // Só bloqueia a tela quando já se sabe que existe algo para carregar: um
+  // link de edição. Quem chega em /criar pela primeira vez — a esmagadora
+  // maioria, e todo mundo que vem de anúncio — não tem rascunho nenhum neste
+  // aparelho. Se isso começasse sempre em `true`, o HTML do servidor seria
+  // uma tela de "procurando suas criações" e o formulário só apareceria
+  // depois da hidratação (medido: ~5s em rede boa, ~9s em 4G lento).
+  const [resuming, setResuming] = useState(Boolean(editDraftToken));
   const [resumed, setResumed] = useState(false);
   const [resumeCandidates, setResumeCandidates] = useState<ResumeCandidate[]>([]);
   const [resumeLoadFailed, setResumeLoadFailed] = useState(false);
@@ -365,6 +371,8 @@ export function CreationWizard({
   useEffect(() => {
     if (!editDraftToken) return;
     let cancelled = false;
+    // O bloqueio já nasce ligado pelo estado inicial: o link de edição diz que
+    // existe um presente para abrir, e não há o que mostrar antes dele chegar.
     (async () => {
       try {
         const draft = await loadDraft(editDraftToken);
@@ -407,7 +415,9 @@ export function CreationWizard({
     let cancelled = false;
     async function resume() {
       const memories = listDraftMemories(localStorage);
+      // Visitante novo: nada para retomar, então nunca segura a tela.
       if (memories.length === 0) return;
+      setResuming(true);
 
       const results = await Promise.all(
         memories.map(async (memory) => {
@@ -1696,6 +1706,14 @@ export function CreationWizard({
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
+              // A barra de ação fica fixa no rodapé no celular e flutua por
+              // cima do conteúdo. Esta folga garante que o fim do passo sempre
+              // consiga rolar para fora de baixo dela — sem isso, o campo de
+              // texto do passo 1 nascia com mais da metade escondido.
+              // O scroll-mb faz o navegador parar o campo focado acima da
+              // barra de ação quando o teclado do celular abre — sem ele o
+              // campo em foco pode nascer escondido atrás dela.
+              className="[&_input]:scroll-mb-28 [&_textarea]:scroll-mb-28 sm:[&_input]:scroll-mb-0 sm:[&_textarea]:scroll-mb-0"
               initial={{ opacity: 0, x: reduceMotion ? 0 : 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduceMotion ? 0 : -24 }}
@@ -2844,8 +2862,13 @@ export function CreationWizard({
           {/* Navegação */}
           <div
             className={cn(
-              "border-border bg-background/95 sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 mt-8 flex items-center justify-between rounded-2xl border p-3 shadow-lg backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none",
-              step === 0 && "justify-end",
+              "mt-8 flex items-center justify-between rounded-2xl",
+              // No primeiro passo a barra entra no fluxo normal: ali não há
+              // formulário longo para navegar, e fixá-la no rodapé cobria
+              // metade do campo de texto da IA e o botão de enviar dele.
+              step === 0
+                ? "justify-end"
+                : "border-border bg-background/95 sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 border p-3 shadow-lg backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none",
             )}
           >
             <Button
