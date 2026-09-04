@@ -1,6 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Heart, Link2, QrCode, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import {
+  Baby,
+  Check,
+  Gem,
+  Gift,
+  Heart,
+  Home,
+  Link2,
+  PawPrint,
+  QrCode,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { Niche } from "@/lib/domain/enums";
 import { cn, formatBRL } from "@/lib/utils";
 import type { PlanDefinition } from "@/lib/domain/plans";
 import { NICHE_LABELS } from "@/lib/domain/templates";
@@ -310,14 +326,24 @@ function StatsStrip({ templateCount }: { templateCount: number }) {
   );
 }
 
-const NICHE_DESCRIPTIONS: Record<string, string> = {
+const NICHE_DESCRIPTIONS: Record<Niche, string> = {
   romance: "Para celebrar o amor que nos conecta.",
-  amizade: "Para os melhores amigos",
-  familia: "Para a família",
-  pet: "Para o seu pet",
-  aniversario: "Para a data especial",
-  bebe: "Para a chegada",
-  casamento: "Para o grande dia",
+  amizade: "Para amigos que tornam a vida mais leve.",
+  familia: "Para guardar nossas raízes e memórias.",
+  pet: "Porque eles também fazem parte da história.",
+  aniversario: "Para celebrar conquistas e momentos especiais.",
+  bebe: "Para eternizar os primeiros momentos de amor.",
+  casamento: "Para celebrar o início de uma nova história.",
+};
+
+const NICHE_ICONS: Record<Niche, LucideIcon> = {
+  romance: Heart,
+  amizade: Users,
+  familia: Home,
+  pet: PawPrint,
+  aniversario: Gift,
+  bebe: Baby,
+  casamento: Gem,
 };
 
 function TemplatesSection() {
@@ -330,23 +356,37 @@ function TemplatesSection() {
         </p>
       </BlurFade>
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {NICHES.map((niche, i) => (
-          <BlurFade key={niche} delay={i * 0.06}>
-            <Link
-              href={`/modelos?nicho=${niche}`}
-              className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/marketing/niches/${niche}.webp`}
-                alt={`${NICHE_LABELS[niche]} — ${NICHE_DESCRIPTIONS[niche]}`}
-                loading="lazy"
-                decoding="async"
-                className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </Link>
-          </BlurFade>
-        ))}
+        {NICHES.map((niche, i) => {
+          const NicheIcon = NICHE_ICONS[niche];
+          return (
+            <BlurFade key={niche} delay={i * 0.06}>
+              <Link
+                href={`/modelos?nicho=${niche}`}
+                className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/marketing/niches/${niche}.webp`}
+                  alt={NICHE_LABELS[niche]}
+                  loading="lazy"
+                  decoding="async"
+                  className="aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="flex items-start gap-3 p-5">
+                  <span className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
+                    <NicheIcon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <span>
+                    <span className="block font-serif text-xl">{NICHE_LABELS[niche]}</span>
+                    <span className="text-muted-foreground mt-1 block text-sm leading-5">
+                      {NICHE_DESCRIPTIONS[niche]}
+                    </span>
+                  </span>
+                </div>
+              </Link>
+            </BlurFade>
+          );
+        })}
       </div>
       <BlurFade className="mt-8 text-center">
         <Link href="/modelos" className="text-sm font-medium text-primary hover:underline">
