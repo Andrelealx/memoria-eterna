@@ -220,7 +220,7 @@ function PhoneMockup() {
       <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-background">
         <Image
           src="/marketing/hero-preview.webp"
-          alt="Prévia do modelo Romance Clássico: capa com Alex &amp; Dani."
+          alt="Prévia de um presente real publicado: Manuelly &amp; André."
           fill
           sizes="230px"
           priority

@@ -1,6 +1,8 @@
 // Script único (não faz parte do build) para capturar prévias reais dos
-// templates renderizados em /modelos/[slug], usadas como imagens de card e
-// no mockup do celular da home. Requer o servidor dev rodando em :3000.
+// templates renderizados em /modelos/[slug], usadas como imagens de card do
+// catálogo. Requer o servidor dev rodando em :3000. O mockup do celular da
+// home usa capture-hero-preview.mjs, que captura um presente real publicado
+// em vez de um template de demonstração.
 import { chromium } from "playwright";
 import sharp from "sharp";
 import { mkdir } from "node:fs/promises";
@@ -54,24 +56,6 @@ async function main() {
     console.log("card ok:", slug);
   }
   await cardPage.close();
-
-  // Mockup do celular na home: viewport baixo o bastante para a capa (80vh)
-  // caber inteira no recorte, incluindo o título "Alex & Dani" e a data —
-  // não só o fundo. Aspecto ~206:436 (área útil do PhoneMockup).
-  const heroPage = await browser.newPage({ viewport: { width: 360, height: 950 } });
-  await heroPage.goto(`${BASE_URL}/modelos/romance-classico`, { waitUntil: "networkidle" });
-  const heroRoot = heroPage.locator(".experience-root");
-  await heroRoot.waitFor({ state: "visible" });
-  await heroPage.waitForTimeout(400);
-  const heroBox = await heroRoot.boundingBox();
-  const heroShot = await heroPage.screenshot({
-    clip: { x: heroBox.x, y: heroBox.y, width: 360, height: 800 },
-  });
-  await sharp(heroShot)
-    .webp({ quality: 82, effort: 6 })
-    .toFile(path.resolve("public/marketing/hero-preview.webp"));
-  console.log("hero ok");
-  await heroPage.close();
 
   await browser.close();
 }
