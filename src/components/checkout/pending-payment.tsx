@@ -267,8 +267,21 @@ export function PendingPayment({ orderId }: { orderId: string }) {
 
         {pix && (
           <>
+            {/* A maior perda do funil está exatamente aqui: gente que gera o
+                Pix e não chega a pagar. O lembrete do presente de cortesia é o
+                motivo mais forte que temos para a pessoa concluir agora. */}
+            <div className="border-accent/40 bg-accent/10 mt-6 flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-left text-sm leading-6">
+              <span className="text-lg leading-none" aria-hidden>
+                🎁
+              </span>
+              <span>
+                <strong className="font-semibold">Assim que o pagamento cair</strong>, seu presente
+                é publicado na hora e você ainda recebe um cupom para criar um{" "}
+                <strong className="font-semibold">segundo presente de cortesia</strong>.
+              </span>
+            </div>
             <ol
-              className="border-border bg-card mt-7 grid gap-3 rounded-2xl border p-4 text-left text-sm sm:grid-cols-3"
+              className="border-border bg-card mt-4 grid gap-3 rounded-2xl border p-4 text-left text-sm sm:grid-cols-3"
               aria-label="Como pagar o Pix"
             >
               {[

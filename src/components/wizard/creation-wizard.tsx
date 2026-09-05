@@ -1519,6 +1519,8 @@ export function CreationWizard({
     );
   }
 
+  const cheapestPlanCents =
+    plans.length > 0 ? Math.min(...plans.map((plan) => plan.priceCents)) : null;
   const currentStepLabel =
     step === 5 && editMode
       ? "Revisar e salvar"
@@ -1556,6 +1558,27 @@ export function CreationWizard({
             <p className="text-muted-foreground mt-1.5 text-sm leading-6">
               {currentStepDescription}
             </p>
+            {/* 126 pessoas entraram aqui no último mês e só 11 chegaram ao
+                pagamento. O medo de "fazer tudo isso e descobrir que é caro"
+                é o candidato mais provável — então isso fica dito de cara. */}
+            {!editMode && step < STEPS.length - 1 && (
+              <ul className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                <li className="flex items-center gap-1.5">
+                  <Check className="text-success h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Você só paga no final
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="text-success h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Vê a prévia pronta antes de decidir
+                </li>
+                {cheapestPlanCents !== null && (
+                  <li className="flex items-center gap-1.5">
+                    <Check className="text-success h-3.5 w-3.5 shrink-0" aria-hidden />A partir de{" "}
+                    {formatBRL(cheapestPlanCents)}
+                  </li>
+                )}
+              </ul>
+            )}
           </div>
           <div className="shrink-0 text-right">
             <p className="border-border bg-background rounded-full border px-3 py-1.5 text-xs font-medium">
@@ -2762,6 +2785,20 @@ export function CreationWizard({
                     </p>
                   ) : (
                     <div>
+                      <p className="border-accent/40 bg-accent/10 mb-4 flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm leading-6">
+                        <span className="text-lg leading-none" aria-hidden>
+                          🎁
+                        </span>
+                        <span>
+                          <strong className="font-semibold">
+                            Este presente vem com outro de cortesia.
+                          </strong>{" "}
+                          <span className="text-muted-foreground">
+                            Assim que o pagamento for confirmado, você recebe por e-mail um cupom
+                            para criar um segundo presente sem pagar nada.
+                          </span>
+                        </span>
+                      </p>
                       <Label>Forma de pagamento</Label>
                       <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <button
@@ -2779,7 +2816,7 @@ export function CreationWizard({
                         >
                           Pix{" "}
                           <span className="mt-1 block text-xs font-normal opacity-80">
-                            Aprovação rápida
+                            Você abre o app do banco
                           </span>
                         </button>
                         <button
@@ -2797,7 +2834,7 @@ export function CreationWizard({
                         >
                           Cartão de crédito{" "}
                           <span className="mt-1 block text-xs font-normal opacity-80">
-                            Em até 12x
+                            Presente liberado na hora
                           </span>
                         </button>
                         <button

@@ -98,6 +98,9 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
                 </Badge>
               </div>
             </BlurFade>
+            <BlurFade delay={0.14} duration={0.35}>
+              <CourtesyBanner />
+            </BlurFade>
             <BlurFade delay={0.16} duration={0.35}>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href="/criar" data-analytics="cta_click" data-analytics-label="hero_criar" className={buttonVariants({ variant: "shiny", size: "lg" })}>
@@ -129,6 +132,32 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
         </div>
       </Spotlight>
     </section>
+  );
+}
+
+// A promoção "leve 2, pague 1" já existe no sistema desde ontem (cupom de
+// cortesia emitido automaticamente após a compra), mas não estava escrita em
+// lugar nenhum do site — nenhum visitante sabia que ela existia. É a oferta
+// mais forte que temos hoje, então aparece no hero, no checkout e na tela de
+// espera do Pix.
+function CourtesyBanner({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3",
+        className,
+      )}
+    >
+      <span className="text-xl leading-none" aria-hidden>
+        🎁
+      </span>
+      <p className="text-sm leading-6">
+        <strong className="font-semibold">Compre 1 presente e ganhe outro de cortesia.</strong>{" "}
+        <span className="text-muted-foreground">
+          Você recebe um cupom para criar um segundo presente sem pagar nada.
+        </span>
+      </p>
+    </div>
   );
 }
 
@@ -647,6 +676,7 @@ function PricingSection({ plans }: { plans: PlanDefinition[] }) {
               Escolha o modelo, coloque as fotos, escreva a mensagem e escolha a música. Pronto para
               presentear no mesmo dia.
             </p>
+            <CourtesyBanner className="w-full text-left" />
             <Link
               href="/criar"
               data-analytics="cta_click"
