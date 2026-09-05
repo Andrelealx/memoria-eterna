@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => {
   const tx = {
-    payment: { findUnique: vi.fn(), update: vi.fn() },
-    order: { updateMany: vi.fn(), findFirst: vi.fn() },
+    paymentEvent: { create: vi.fn() },
+    payment: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn() },
+    order: { updateMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     physicalOrder: { updateMany: vi.fn() },
     couponRedemption: { deleteMany: vi.fn() },
-    project: { updateMany: vi.fn() },
+    project: { updateMany: vi.fn(), update: vi.fn(), findMany: vi.fn() },
   };
   return {
     tx,
@@ -20,6 +21,12 @@ const db = vi.hoisted(() => {
     order: {
       findUnique: vi.fn(),
     },
+    plan: {
+      findUnique: vi.fn(),
+    },
+    coupon: {
+      create: vi.fn(),
+    },
   };
 });
 
@@ -28,12 +35,30 @@ const paymentProvider = vi.hoisted(() => ({
   getPaymentStatus: vi.fn(),
 }));
 
+const emailProvider = vi.hoisted(() => ({
+  send: vi.fn(),
+}));
+
 vi.mock("@/lib/db", () => ({
-  prisma: { $transaction: db.transaction, payment: db.payment, order: db.order },
+  prisma: {
+    $transaction: db.transaction,
+    payment: db.payment,
+    order: db.order,
+    plan: db.plan,
+    coupon: db.coupon,
+  },
 }));
 
 vi.mock("@/lib/adapters/payment", () => ({
   getPaymentProvider: () => paymentProvider,
+}));
+
+vi.mock("@/lib/adapters/email/factory", () => ({
+  getEmailProvider: () => emailProvider,
+}));
+
+vi.mock("@/lib/auth/magic-link", () => ({
+  createMagicLink: vi.fn().mockResolvedValue("raw-magic-token"),
 }));
 
 import {
@@ -361,5 +386,133 @@ describe("regeneratePixForCustomer", () => {
     await expect(regeneratePixForCustomer(orderId, "cliente-id")).rejects.toThrow(
       "Aguarde alguns segundos",
     );
+  });
+});
+
+describe("initiatePayment — cupom de 100% (presente de cortesia)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.tx.paymentEvent.create.mockResolvedValue({});
+    db.tx.payment.findUniqueOrThrow.mockResolvedValue({
+      id: "payment-id",
+      status: "CREATED",
+      orderId: "order-id",
+      order: {
+        id: "order-id",
+        customerId: "customer-id",
+        checkoutEmail: "cliente@example.com",
+        project: null,
+        items: [],
+        couponRedemptions: [],
+      },
+    });
+    db.tx.order.update.mockResolvedValue({});
+    db.tx.physicalOrder.updateMany.mockResolvedValue({ count: 0 });
+    db.payment.findUnique.mockResolvedValue({
+      order: {
+        customerId: "customer-id",
+        checkoutEmail: "cliente@example.com",
+        couponRedemptions: [],
+        project: null,
+      },
+    });
+    db.plan.findUnique.mockResolvedValue({ id: "plan-momento-id", active: true });
+    db.coupon.create.mockResolvedValue({});
+  });
+
+  it("aprova direto e nunca chama o provedor quando o total é zero", async () => {
+    db.payment.findUnique.mockResolvedValueOnce({
+      id: "payment-id",
+      orderId: "order-id",
+      amount: 0,
+      idempotencyKey: "pay-idempotency",
+      order: { orderNumber: "PV-2026-000099" },
+    });
+    // As 2 chamadas seguintes (e-mail e checagem de cortesia) usam o mock
+    // padrão do beforeEach — este teste não afirma nada sobre elas.
+
+    await expect(
+      initiatePayment("payment-id", "PIX", "cliente@example.com", "Cliente"),
+    ).resolves.toEqual({ status: "APPROVED", redirect: "sucesso", orderId: "order-id" });
+
+    expect(paymentProvider.createPayment).not.toHaveBeenCalled();
+    expect(db.tx.order.update).toHaveBeenCalledWith({
+      where: { id: "order-id" },
+      data: { status: "PAID" },
+    });
+  });
+
+  it("emite um cupom de cortesia de 100% para o plano Momento após a aprovação", async () => {
+    db.payment.findUnique.mockResolvedValueOnce({
+      id: "payment-id",
+      orderId: "order-id",
+      amount: 990,
+      idempotencyKey: "pay-idempotency",
+      order: { orderNumber: "PV-2026-000099" },
+    });
+    paymentProvider.createPayment.mockResolvedValue({
+      providerPaymentId: "prov-id",
+      status: "APPROVED",
+    });
+    // 2ª chamada: e-mail de "pagamento aprovado". 3ª: checagem de
+    // encadeamento dentro de issueCourtesyCoupon — sem cupom de cortesia
+    // usado neste pedido, então a cortesia deve ser emitida.
+    db.payment.findUnique.mockResolvedValueOnce({
+      order: { customerId: "customer-id", checkoutEmail: "cliente@example.com", project: null },
+    });
+    db.payment.findUnique.mockResolvedValueOnce({
+      order: {
+        customerId: "customer-id",
+        checkoutEmail: "cliente@example.com",
+        couponRedemptions: [],
+        project: null,
+      },
+    });
+
+    await initiatePayment("payment-id", "PIX", "cliente@example.com", "Cliente");
+
+    expect(db.coupon.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "PERCENTAGE",
+          value: 100,
+          plans: { create: [{ planId: "plan-momento-id" }] },
+        }),
+      }),
+    );
+    const createdCode = db.coupon.create.mock.calls[0][0].data.code;
+    expect(createdCode).toMatch(/^CORTESIA-/);
+    expect(emailProvider.send).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "cliente@example.com", template: "courtesy-coupon" }),
+    );
+  });
+
+  it("não encadeia: pedido pago com cupom de cortesia não gera outro cupom", async () => {
+    // 3 chamadas reais a prisma.payment.findUnique nesse caminho: a checagem
+    // de valor zero em initiatePayment, o e-mail de "pagamento aprovado" e,
+    // por último, a checagem de encadeamento dentro de issueCourtesyCoupon —
+    // é essa última que precisa carregar o cupom de cortesia já usado.
+    db.payment.findUnique.mockResolvedValueOnce({
+      id: "payment-id",
+      orderId: "order-id",
+      amount: 0,
+      idempotencyKey: "pay-idempotency",
+      order: { orderNumber: "PV-2026-000099" },
+    });
+    db.payment.findUnique.mockResolvedValueOnce({
+      order: { customerId: "customer-id", checkoutEmail: "cliente@example.com", project: null },
+    });
+    db.payment.findUnique.mockResolvedValueOnce({
+      order: {
+        customerId: "customer-id",
+        checkoutEmail: "cliente@example.com",
+        couponRedemptions: [{ coupon: { code: "CORTESIA-ABC12345" } }],
+        project: null,
+      },
+    });
+
+    await initiatePayment("payment-id", "PIX", "cliente@example.com", "Cliente");
+
+    expect(db.coupon.create).not.toHaveBeenCalled();
   });
 });

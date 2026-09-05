@@ -1713,7 +1713,7 @@ export function CreationWizard({
               // O scroll-mb faz o navegador parar o campo focado acima da
               // barra de ação quando o teclado do celular abre — sem ele o
               // campo em foco pode nascer escondido atrás dela.
-              className="[&_input]:scroll-mb-28 [&_textarea]:scroll-mb-28 sm:[&_input]:scroll-mb-0 sm:[&_textarea]:scroll-mb-0"
+              className="[&_input]:scroll-mb-28 sm:[&_input]:scroll-mb-0 [&_textarea]:scroll-mb-28 sm:[&_textarea]:scroll-mb-0"
               initial={{ opacity: 0, x: reduceMotion ? 0 : 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduceMotion ? 0 : -24 }}
@@ -2755,94 +2755,101 @@ export function CreationWizard({
                     )}
                   </div>
 
-                  <div>
-                    <Label>Forma de pagamento</Label>
-                    <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMethod("PIX");
-                          setCheckoutError(null);
-                        }}
-                        className={cn(
-                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
-                          method === "PIX"
-                            ? "border-primary bg-card text-primary"
-                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
-                        )}
-                      >
-                        Pix{" "}
-                        <span className="mt-1 block text-xs font-normal opacity-80">
-                          Aprovação rápida
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMethod("CARD");
-                          setCheckoutError(null);
-                        }}
-                        className={cn(
-                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
-                          method === "CARD"
-                            ? "border-primary bg-card text-primary"
-                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
-                        )}
-                      >
-                        Cartão de crédito{" "}
-                        <span className="mt-1 block text-xs font-normal opacity-80">
-                          Em até 12x
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMethod("CHECKOUT_PRO");
-                          setCheckoutError(null);
-                        }}
-                        className={cn(
-                          "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
-                          method === "CHECKOUT_PRO"
-                            ? "border-primary bg-card text-primary"
-                            : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
-                        )}
-                      >
-                        Continuar pelo Mercado Pago{" "}
-                        <span className="mt-1 block text-xs font-normal opacity-80">
-                          Pix, cartão, boleto e mais
-                        </span>
-                      </button>
-                    </div>
-
-                    {method === "CHECKOUT_PRO" && (
-                      <p className="border-border bg-secondary/40 text-muted-foreground mt-4 rounded-xl border px-4 py-3 text-sm">
-                        Você vai continuar numa página segura do Mercado Pago, com todas as formas
-                        de pagamento que a sua conta aceitar. Depois de pagar, volta pra cá
-                        automaticamente.
-                      </p>
-                    )}
-
-                    {method === "CARD" && (
-                      <div className="border-border bg-card mt-4 rounded-2xl border p-4 sm:p-5">
-                        {process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ? (
-                          <CardPaymentForm
-                            ref={cardFormRef}
-                            publicKey={process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY}
-                            amountCents={checkoutTotalCents}
-                            payerEmail={email}
-                            payerName={buyerName}
-                            disabled={busy}
-                            onTokenized={handleCardTokenized}
-                            onError={handleCardError}
-                          />
-                        ) : (
-                          <p className="text-error text-sm" role="alert">
-                            Pagamento por cartão indisponível no momento. Use o Pix.
-                          </p>
-                        )}
+                  {checkoutTotalCents === 0 ? (
+                    <p className="border-success/30 bg-success/10 text-success rounded-2xl border px-4 py-3 text-sm">
+                      Cupom de 100% aplicado — nenhum pagamento é necessário. Clique em
+                      &ldquo;Resgatar presente grátis&rdquo; para publicar.
+                    </p>
+                  ) : (
+                    <div>
+                      <Label>Forma de pagamento</Label>
+                      <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMethod("PIX");
+                            setCheckoutError(null);
+                          }}
+                          className={cn(
+                            "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                            method === "PIX"
+                              ? "border-primary bg-card text-primary"
+                              : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                          )}
+                        >
+                          Pix{" "}
+                          <span className="mt-1 block text-xs font-normal opacity-80">
+                            Aprovação rápida
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMethod("CARD");
+                            setCheckoutError(null);
+                          }}
+                          className={cn(
+                            "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                            method === "CARD"
+                              ? "border-primary bg-card text-primary"
+                              : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                          )}
+                        >
+                          Cartão de crédito{" "}
+                          <span className="mt-1 block text-xs font-normal opacity-80">
+                            Em até 12x
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMethod("CHECKOUT_PRO");
+                            setCheckoutError(null);
+                          }}
+                          className={cn(
+                            "rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
+                            method === "CHECKOUT_PRO"
+                              ? "border-primary bg-card text-primary"
+                              : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/40",
+                          )}
+                        >
+                          Continuar pelo Mercado Pago{" "}
+                          <span className="mt-1 block text-xs font-normal opacity-80">
+                            Pix, cartão, boleto e mais
+                          </span>
+                        </button>
                       </div>
-                    )}
-                  </div>
+
+                      {method === "CHECKOUT_PRO" && (
+                        <p className="border-border bg-secondary/40 text-muted-foreground mt-4 rounded-xl border px-4 py-3 text-sm">
+                          Você vai continuar numa página segura do Mercado Pago, com todas as formas
+                          de pagamento que a sua conta aceitar. Depois de pagar, volta pra cá
+                          automaticamente.
+                        </p>
+                      )}
+
+                      {method === "CARD" && (
+                        <div className="border-border bg-card mt-4 rounded-2xl border p-4 sm:p-5">
+                          {process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ? (
+                            <CardPaymentForm
+                              ref={cardFormRef}
+                              publicKey={process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY}
+                              amountCents={checkoutTotalCents}
+                              payerEmail={email}
+                              payerName={buyerName}
+                              disabled={busy}
+                              onTokenized={handleCardTokenized}
+                              onError={handleCardError}
+                            />
+                          ) : (
+                            <p className="text-error text-sm" role="alert">
+                              Pagamento por cartão indisponível no momento. Use o Pix.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -2937,20 +2944,24 @@ export function CreationWizard({
                 data-analytics="checkout_start"
                 data-analytics-label={selectedPlan.slug}
                 onClick={
-                  method === "PIX"
+                  checkoutTotalCents === 0
                     ? handleCheckout
-                    : method === "CARD"
-                      ? handleCardSubmit
-                      : handleCheckoutProSubmit
+                    : method === "PIX"
+                      ? handleCheckout
+                      : method === "CARD"
+                        ? handleCardSubmit
+                        : handleCheckoutProSubmit
                 }
                 disabled={busy || saving}
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {method === "PIX"
-                  ? `Gerar Pix de ${formatBRL(checkoutTotalCents)}`
-                  : method === "CARD"
-                    ? `Pagar ${formatBRL(checkoutTotalCents)} no cartão`
-                    : `Continuar pelo Mercado Pago`}
+                {checkoutTotalCents === 0
+                  ? "Resgatar presente grátis"
+                  : method === "PIX"
+                    ? `Gerar Pix de ${formatBRL(checkoutTotalCents)}`
+                    : method === "CARD"
+                      ? `Pagar ${formatBRL(checkoutTotalCents)} no cartão`
+                      : `Continuar pelo Mercado Pago`}
               </Button>
             )}
           </div>

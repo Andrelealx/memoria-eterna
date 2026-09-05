@@ -65,6 +65,19 @@ function renderEmail(message: EmailMessage) {
       <p>Seu pagamento do pedido <strong>${escapeHtml(message.data.orderNumber ?? "")}</strong> foi aprovado e seu presente já está disponível.</p>
       <p>${giftAction}${action(message.data.accessUrl, message.data.accessLabel || "Acessar meu presente")}</p>
       <p style="font-size:13px;color:#6E6568">Guarde este e-mail. O botão de acesso é pessoal e não deve ser compartilhado.</p>`;
+  } else if (message.template === "courtesy-coupon" && message.data.code) {
+    const validUntil = message.data.validUntil ? new Date(message.data.validUntil) : null;
+    const formattedDate =
+      validUntil && !Number.isNaN(validUntil.getTime())
+        ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
+            validUntil,
+          )
+        : null;
+    content = `
+      <p>Quem presenteia merece ganhar um presente também. Você tem um cupom para criar mais um site do <strong>Plano Momento</strong>, totalmente grátis.</p>
+      <p style="font-size:28px;font-weight:800;letter-spacing:2px;background:#F1E9EC;border-radius:12px;padding:16px 20px;text-align:center;margin:20px 0">${escapeHtml(message.data.code)}</p>
+      <p>${action(message.data.createUrl ?? "#", "Criar meu presente de cortesia")}</p>
+      <p style="font-size:13px;color:#6E6568">Cole este código na etapa de pagamento ao criar o presente. ${formattedDate ? `Válido até ${formattedDate}.` : ""} Vale só para o Plano Momento, uma vez.</p>`;
   } else if (message.template === "about-to-expire") {
     content = `<p>Seu presente ${escapeHtml(message.data.title ?? "")} está perto de expirar. Entre na sua conta para conferir as opções disponíveis.</p>`;
   } else {

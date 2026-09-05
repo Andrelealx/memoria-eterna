@@ -15,6 +15,7 @@ import { isProjectStatusEditable, planLimitsFor } from "@/lib/domain/plans";
 import { suggestUniqueSlug } from "@/lib/domain/slug";
 import { getPaymentProvider } from "@/lib/adapters/payment";
 import { getEmailProvider } from "@/lib/adapters/email/factory";
+import { issueCourtesyCoupon } from "@/lib/server/courtesy";
 import type { PaymentMethod, PaymentStatus } from "@/lib/domain/enums";
 import { createMagicLink } from "@/lib/auth/magic-link";
 import { getShippingProvider } from "@/lib/adapters/shipping/factory";
@@ -667,6 +668,15 @@ export async function initiatePayment(
     include: { order: true },
   });
   if (!payment) throw new Error("[payment] Pagamento não encontrado.");
+
+  // Cupom de 100% (ex.: presente de cortesia) zera o total. Não faz sentido
+  // pedir Pix ou cartão de um valor R$ 0,00 — o provedor de pagamento nem
+  // aceitaria a cobrança. Aprova direto, sem passar pelo Mercado Pago.
+  if (payment.amount === 0) {
+    await processPaymentApproved(payment.id, `free_${payment.id}`);
+    return { status: "APPROVED", redirect: "sucesso", orderId: payment.orderId };
+  }
+
   if (method === "CARD" && !card) {
     throw new Error("[payment] Dados do cartão ausentes.");
   }
@@ -734,6 +744,7 @@ export async function processPaymentApproved(
   paymentId: string,
   providerEventId: string,
 ): Promise<{ ok: boolean; duplicate: boolean }> {
+  let alreadyApproved = false;
   try {
     await prisma.$transaction(async (tx) => {
       // Idempotência: evento único; se já processado, o create falha (P2002).
@@ -752,7 +763,12 @@ export async function processPaymentApproved(
         include: { order: { include: { project: true, items: { include: { plan: true } } } } },
       });
 
-      if (payment.status !== "APPROVED") {
+      // O webhook e a reconciliação de segurança podem, em uma corrida rara,
+      // aprovar o mesmo pagamento por dois eventos diferentes (IDs distintos,
+      // então a checagem de PaymentEvent acima não pega). Guarda aqui para que
+      // o e-mail de confirmação e o cupom de cortesia saiam uma única vez.
+      alreadyApproved = payment.status === "APPROVED";
+      if (!alreadyApproved) {
         await tx.payment.update({ where: { id: paymentId }, data: { status: "APPROVED" } });
       }
       await tx.order.update({ where: { id: payment.orderId }, data: { status: "PAID" } });
@@ -808,38 +824,50 @@ export async function processPaymentApproved(
       }
     });
 
-    // E-mail transacional com acesso ao presente. Nunca bloqueia a publicação.
-    try {
-      const paid = await prisma.payment.findUnique({
-        where: { id: paymentId },
-        include: { order: { include: { project: { include: { plan: true } } } } },
-      });
-      const customerId = paid?.order.customerId;
-      const to = paid?.order.checkoutEmail;
-      if (!customerId || !to) throw new Error("Pagamento sem cliente vinculado.");
-      const rawToken = await createMagicLink(customerId);
-      const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-      const project = paid.order.project;
-      // Leva direto para a tela do presente (com o botão Editar quando o
-      // plano permite), em vez de largar a pessoa no painel genérico.
-      const next = project ? `/painel/presentes/${project.id}` : "/painel";
-      const editable = project ? isProjectStatusEditable("PUBLISHED", project.plan?.limits) : false;
-      const emailData: Record<string, string> = {
-        orderNumber: paid.order.orderNumber,
-        accessUrl: `${base}/entrar/${rawToken}?next=${encodeURIComponent(next)}`,
-        accessLabel: editable ? "Acessar e editar" : "Acessar meu presente",
-      };
-      if (project?.slug) {
-        emailData.giftUrl = `${base}/presente/${project.slug}`;
+    // E-mail transacional com acesso ao presente, e o cupom de cortesia do
+    // "leve 2, pague 1". Só na transição real para aprovado — nunca de novo.
+    if (!alreadyApproved) {
+      try {
+        const paid = await prisma.payment.findUnique({
+          where: { id: paymentId },
+          include: { order: { include: { project: { include: { plan: true } } } } },
+        });
+        const customerId = paid?.order.customerId;
+        const to = paid?.order.checkoutEmail;
+        if (!customerId || !to) throw new Error("Pagamento sem cliente vinculado.");
+        const rawToken = await createMagicLink(customerId);
+        const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+        const project = paid.order.project;
+        // Leva direto para a tela do presente (com o botão Editar quando o
+        // plano permite), em vez de largar a pessoa no painel genérico.
+        const next = project ? `/painel/presentes/${project.id}` : "/painel";
+        const editable = project ? isProjectStatusEditable("PUBLISHED", project.plan?.limits) : false;
+        const emailData: Record<string, string> = {
+          orderNumber: paid.order.orderNumber,
+          accessUrl: `${base}/entrar/${rawToken}?next=${encodeURIComponent(next)}`,
+          accessLabel: editable ? "Acessar e editar" : "Acessar meu presente",
+        };
+        if (project?.slug) {
+          emailData.giftUrl = `${base}/presente/${project.slug}`;
+        }
+        await getEmailProvider().send({
+          to,
+          template: "payment-approved",
+          subject: "Pagamento aprovado",
+          data: emailData,
+        });
+      } catch {
+        // log apenas
       }
-      await getEmailProvider().send({
-        to,
-        template: "payment-approved",
-        subject: "Pagamento aprovado",
-        data: emailData,
-      });
-    } catch {
-      // log apenas
+
+      try {
+        await issueCourtesyCoupon(paymentId);
+      } catch (cause) {
+        console.error("[courtesy] Falha ao emitir cupom de cortesia.", {
+          paymentId,
+          cause: cause instanceof Error ? cause.message : String(cause),
+        });
+      }
     }
 
     return { ok: true, duplicate: false };

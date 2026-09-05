@@ -39,7 +39,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
   {
     slug: PLAN_SLUGS.MOMENTO,
     name: "Momento",
-    priceCents: 1990,
+    priceCents: 490,
     durationDays: 7,
     includesPhysical: false,
     order: 1,
@@ -56,7 +56,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
   {
     slug: PLAN_SLUGS.PARA_SEMPRE,
     name: "Para Sempre",
-    priceCents: 5990,
+    priceCents: 1990,
     durationDays: null,
     includesPhysical: false,
     order: 2,
@@ -73,7 +73,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
   {
     slug: PLAN_SLUGS.KIT_CORACAO_NFC,
     name: "Kit Coração NFC",
-    priceCents: 14990,
+    priceCents: 4990,
     durationDays: null,
     includesPhysical: true,
     order: 3,

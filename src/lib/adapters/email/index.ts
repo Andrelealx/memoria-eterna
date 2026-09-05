@@ -4,6 +4,7 @@
 export type EmailTemplateId =
   | "magic-link"
   | "payment-approved"
+  | "courtesy-coupon"
   | "pix-pending"
   | "physical-received"
   | "order-shipped"

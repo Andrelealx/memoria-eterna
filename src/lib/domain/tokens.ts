@@ -50,6 +50,11 @@ export function generateOrderNumber(seq: number, now = new Date()): string {
   return `PV-${year}-${String(seq).padStart(6, "0")}`;
 }
 
+/** Código de cupom gerado pelo sistema (ex.: cupons de cortesia). */
+export function generateCouponCode(length = 8): string {
+  return randomString(length, ALPHABET);
+}
+
 /** Gera um seq inteiro aleatório (não usado como segredo). */
 export function randomIntBetween(min: number, max: number): number {
   return randomInt(min, max + 1);
