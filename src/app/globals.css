@@ -148,6 +148,65 @@
   }
 }
 
+/* Manchas de cor decorativas atrás do hero e de outras seções — dão o clima
+   "mais vivo" sem depender de nenhuma imagem, e nunca competem com o texto
+   porque ficam borradas e com opacidade baixa. */
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(4%, -6%) scale(1.08);
+  }
+  50% {
+    transform: translate(-3%, 4%) scale(0.96);
+  }
+  75% {
+    transform: translate(-5%, -3%) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 16s ease-in-out infinite;
+}
+
+/* Batimento sutil para ícones/emoji que devem chamar atenção sem irritar. */
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.18);
+  }
+  30% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 2.4s ease-in-out infinite;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @keyframes blur-fade-in {
   from {
     opacity: 0;

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -62,6 +63,7 @@ export default async function HomePage() {
 function Hero({ startingPrice }: { startingPrice: number | null }) {
   return (
     <section className="relative overflow-hidden">
+      <ColorBlobs />
       <FloatingHearts count={16} className="opacity-70" />
       <Spotlight className="mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 md:pt-20">
         <div className="grid items-center gap-12 md:grid-cols-2">
@@ -82,6 +84,9 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
                 Você envia as fotos e conta a história de vocês. A gente transforma tudo em um
                 presente pronto para emocionar quem você ama.
               </p>
+            </BlurFade>
+            <BlurFade delay={0.1} duration={0.35}>
+              <HeroExplainer />
             </BlurFade>
             <BlurFade delay={0.12} duration={0.35}>
               <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -124,6 +129,56 @@ function Hero({ startingPrice }: { startingPrice: number | null }) {
         </div>
       </Spotlight>
     </section>
+  );
+}
+
+const HERO_EXPLAINER_STEPS = [
+  { emoji: "📸", label: "Fotos", color: "#ff6ea8" },
+  { emoji: "💌", label: "Mensagem", color: "#ffb648" },
+  { emoji: "🎵", label: "Música", color: "#8b5cf6" },
+  { emoji: "🎁", label: "Presente!", color: "#722b45" },
+];
+
+// Resposta visual e imediata para "o que exatamente eu estou comprando" — o
+// principal ponto fraco identificado na análise de conversão do site: a
+// pessoa via uma frase bonita, mas não entendia o produto em 3 segundos.
+function HeroExplainer() {
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-1.5" aria-hidden>
+      {HERO_EXPLAINER_STEPS.map((step, i) => (
+        <div key={step.label} className="flex items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
+            <span
+              className="animate-pop-in flex h-11 w-11 items-center justify-center rounded-full text-xl shadow-sm"
+              style={{
+                backgroundColor: `${step.color}1f`,
+                animationDelay: `${0.4 + i * 0.12}s`,
+              }}
+            >
+              {step.emoji}
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">{step.label}</span>
+          </div>
+          {i < HERO_EXPLAINER_STEPS.length - 1 && (
+            <span className="mb-4 text-lg text-border">→</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Manchas de cor grandes e borradas atrás do conteúdo — o "mais colorido e
+// vivo" pedido, sem nenhuma imagem nova e sem competir com o texto (opacidade
+// baixa, atrás de tudo, aria-hidden). `pointer-events-none` deixa os cliques
+// passarem direto para o conteúdo por cima.
+function ColorBlobs() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div className="animate-blob absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#ff6ea8] opacity-30 blur-3xl" />
+      <div className="animate-blob absolute -right-16 top-10 h-[26rem] w-[26rem] rounded-full bg-[#ffb648] opacity-25 blur-3xl [animation-delay:4s]" />
+      <div className="animate-blob absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-[#8b5cf6] opacity-20 blur-3xl [animation-delay:8s]" />
+    </div>
   );
 }
 
@@ -204,13 +259,20 @@ const MARQUEE_ITEMS = [
   "Privacidade",
 ];
 
+const MARQUEE_COLORS = ["#ff6ea8", "#ffb648", "#8b5cf6", "#22c1a3", "#722b45"];
+
 function MarqueeStrip() {
   return (
     <section className="border-y border-border bg-card py-6">
       <Marquee pauseOnHover>
-        {MARQUEE_ITEMS.map((item) => (
+        {MARQUEE_ITEMS.map((item, i) => (
           <span key={item} className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Heart className="h-3.5 w-3.5 text-primary/60" />
+            <Heart
+              className="h-3.5 w-3.5"
+              style={{ color: MARQUEE_COLORS[i % MARQUEE_COLORS.length] }}
+              fill={MARQUEE_COLORS[i % MARQUEE_COLORS.length]}
+              fillOpacity={0.25}
+            />
             {item}
           </span>
         ))}
@@ -221,9 +283,27 @@ function MarqueeStrip() {
 
 function HowItWorks() {
   const steps = [
-    { n: "1", title: "Escolha um estilo", text: "Um modelo que combine com a ocasião e com a história de vocês." },
-    { n: "2", title: "Conte a história de vocês", text: "Adicione fotos, datas, mensagens e uma música." },
-    { n: "3", title: "Entregue e emocione", text: "Mande pelo WhatsApp, ou entregue o coração físico — é só aproximar do celular para abrir." },
+    {
+      n: "1",
+      icon: "🎨",
+      color: "#ff6ea8",
+      title: "Escolha um estilo",
+      text: "Um modelo que combine com a ocasião e com a história de vocês.",
+    },
+    {
+      n: "2",
+      icon: "💬",
+      color: "#ffb648",
+      title: "Conte a história de vocês",
+      text: "Adicione fotos, datas, mensagens e uma música.",
+    },
+    {
+      n: "3",
+      icon: "🎁",
+      color: "#8b5cf6",
+      title: "Entregue e emocione",
+      text: "Mande pelo WhatsApp, ou entregue o coração físico — é só aproximar do celular para abrir.",
+    },
   ];
   return (
     <section id="como-funciona" className="scroll-mt-20 border-y border-border bg-card">
@@ -231,11 +311,27 @@ function HowItWorks() {
         <BlurFade>
           <h2 className="text-center font-serif text-3xl md:text-4xl">Como funciona</h2>
         </BlurFade>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="relative mt-12 grid gap-6 md:grid-cols-3">
+          {/* Linha pontilhada ligando os 3 passos — só no desktop, onde os
+              cards ficam lado a lado e a sequência fica visualmente óbvia. */}
+          <div
+            aria-hidden
+            className="absolute top-[3.25rem] right-0 left-0 hidden border-t-2 border-dashed border-border md:block"
+          />
           {steps.map((s, i) => (
             <BlurFade key={s.n} delay={i * 0.1}>
-              <div className="h-full rounded-3xl border border-border p-8 transition-shadow duration-300 hover:shadow-md">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-lg text-primary-foreground">
+              <div className="bg-card relative h-full rounded-3xl border border-border p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span
+                  className="flex h-14 w-14 items-center justify-center rounded-full text-2xl shadow-sm"
+                  style={{ backgroundColor: `${s.color}26` }}
+                >
+                  {s.icon}
+                </span>
+                <span
+                  className="absolute top-6 right-6 font-serif text-3xl"
+                  style={{ color: s.color }}
+                  aria-hidden
+                >
                   {s.n}
                 </span>
                 <h3 className="mt-5 font-serif text-xl">{s.title}</h3>
@@ -305,17 +401,17 @@ function StylePhoneMockup({ slug, label }: { slug: string; label: string }) {
 
 function StatsStrip({ templateCount }: { templateCount: number }) {
   const stats = [
-    { value: templateCount, label: "modelos" },
-    { value: 7, label: "nichos para presentear" },
-    { value: 30, label: "fotos no Para Sempre" },
-    { value: 12, label: "momentos na linha do tempo" },
+    { value: templateCount, label: "modelos", color: "#ff6ea8" },
+    { value: 7, label: "nichos para presentear", color: "#ffb648" },
+    { value: 30, label: "fotos no Para Sempre", color: "#8b5cf6" },
+    { value: 12, label: "momentos na linha do tempo", color: "#22c1a3" },
   ];
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
         {stats.map((s, i) => (
           <BlurFade key={s.label} delay={i * 0.08} className="text-center">
-            <p className="font-serif text-4xl text-primary md:text-5xl">
+            <p className="font-serif text-4xl md:text-5xl" style={{ color: s.color }}>
               <NumberTicker value={s.value} />
             </p>
             <p className="mt-2 text-sm text-muted-foreground">{s.label}</p>
@@ -346,6 +442,16 @@ const NICHE_ICONS: Record<Niche, LucideIcon> = {
   casamento: Gem,
 };
 
+const NICHE_COLORS: Record<Niche, string> = {
+  romance: "#ff6ea8",
+  amizade: "#ffb648",
+  familia: "#22c1a3",
+  pet: "#f97316",
+  aniversario: "#8b5cf6",
+  bebe: "#38bdf8",
+  casamento: "#722b45",
+};
+
 function TemplatesSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -358,11 +464,13 @@ function TemplatesSection() {
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {NICHES.map((niche, i) => {
           const NicheIcon = NICHE_ICONS[niche];
+          const color = NICHE_COLORS[niche];
           return (
             <BlurFade key={niche} delay={i * 0.06}>
               <Link
                 href={`/modelos?nicho=${niche}`}
-                className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+                className="group block h-full overflow-hidden rounded-3xl border border-border bg-card transition-all duration-200 hover:-translate-y-1.5 hover:shadow-lg hover:[border-color:var(--niche-color)]"
+                style={{ "--niche-color": color } as CSSProperties}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -373,7 +481,10 @@ function TemplatesSection() {
                   className="aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="flex items-start gap-3 p-5">
-                  <span className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                    style={{ backgroundColor: `${color}22`, color }}
+                  >
                     <NicheIcon className="h-5 w-5" aria-hidden />
                   </span>
                   <span>
